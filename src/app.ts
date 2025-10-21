@@ -4,6 +4,7 @@ import { authController } from "./modules/auth";
 import cors from "@elysiajs/cors";
 import bearer from "@elysiajs/bearer";
 import { authGuard } from "./plugin/auth-guard";
+import { profileController } from "./modules/profiles";
 
 new Elysia()
   .use(cors())
@@ -16,7 +17,7 @@ new Elysia()
     app
       .use(authController)
       .guard(authGuard)
-      .get("/ayam", () => "Welcome to the Elysia API!")
+      .use(profileController)
       .get("/me", async ({ jwt, status, bearer }) => {
         const verifyToken = await jwt.verify(bearer);
         if (!verifyToken) return status(401), { error: "Unauthorized" };

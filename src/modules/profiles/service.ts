@@ -1,4 +1,3 @@
-import { eq } from "drizzle-orm";
 import { db } from "../../db/clients";
 import { users } from "../../db/schema";
 
@@ -12,30 +11,8 @@ export const createUser = async (
     email,
     passwordHash,
   });
-
+  console.log("Created User:", newUser);
   return newUser;
-};
-
-export const findUserByEmail = async (email: string) => {
-  const user = await db.query.users.findFirst({
-    where: (users, { eq }) => eq(users.email, email),
-  });
-  return user;
-};
-
-export const verifyEmail = async (email: string) => {
-  const user = await findUserByEmail(email);
-  if (!user) {
-    return { success: false, error: "Email not registered" };
-  }
-
-  const [respon] = await db
-    .update(users)
-    .set({ verifiedEmail: true })
-    .where(eq(users.email, email))
-    .returning();
-
-  return { data: respon };
 };
 
 export const findUserByUsername = async (username: string) => {
