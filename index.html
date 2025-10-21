@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Todo List – Responsive + Add/Edit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: "#eef2ff",
+                100: "#e0e7ff",
+                200: "#c7d2fe",
+                300: "#a5b4fc",
+                400: "#818cf8",
+                500: "#6366f1",
+                600: "#4f46e5",
+                700: "#4338ca",
+                800: "#3730a3",
+                900: "#312e81",
+              },
+            },
+            boxShadow: { soft: "0 10px 30px rgba(2,6,23,.08)" },
+          },
+        },
+        darkMode: "class",
+      };
+    </script>
+    <style>
+      .thin-scrollbar {
+        scrollbar-width: thin;
+      }
+      .thin-scrollbar::-webkit-scrollbar {
+        height: 8px;
+        width: 8px;
+      }
+      .thin-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 999px;
+      }
+      .dark .thin-scrollbar::-webkit-scrollbar-thumb {
+        background: #475569;
+      }
+      [data-open="false"] {
+        display: none;
+      }
+      .truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .drop-hover {
+        outline: 3px dashed rgba(99, 102, 241, 0.6);
+        outline-offset: 4px;
+      }
+      dialog::backdrop {
+        background: rgba(0, 0, 0, 0.35);
+      }
+    </style>
+  </head>
+  <body
+    class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 antialiased"
+  >
+    <!-- Topbar -->
+    <header
+      class="sticky top-0 z-40 bg-white/85 dark:bg-slate-900/85 backdrop-blur border-b border-slate-200 dark:border-slate-800"
+    >
+      <div
+        class="max-w-7xl mx-auto h-16 px-4 sm:px-6 lg:px-8 flex items-center gap-3"
+      >
+        <div class="flex items-center gap-2">
+          <div
+            class="size-8 rounded-xl bg-brand-600 text-white grid place-items-center font-semibold shadow-soft"
+          >
+            TL
+          </div>
+          <div>
+            <h1 class="font-semibold leading-5">Todo List</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+              HTML + Tailwind + JS
+            </p>
+          </div>
+        </div>
+        <div class="ml-auto flex items-center gap-2">
+          <input
+            id="q"
+            type="search"
+            placeholder="Cari task..."
+            class="h-9 w-44 sm:w-72 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 px-3 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+          />
+          <button
+            id="themeBtn"
+            class="h-9 px-3 rounded-lg text-sm border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            🌓
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Filters -->
+    <section
+      class="border-b border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60"
+    >
+      <div
+        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 grid gap-2 sm:grid-cols-5"
+      >
+        <select
+          id="projectFilter"
+          class="h-10 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 text-sm"
+        >
+          <option value="">Semua Project</option>
+        </select>
+        <select
+          id="statusFilter"
+          class="h-10 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 text-sm"
+        >
+          <option value="">Semua Status</option>
+          <option value="todo">Todo</option>
+          <option value="in_progress">In Progress</option>
+          <option value="blocked">Blocked</option>
+          <option value="done">Done</option>
+          <option value="archived">Archived</option>
+        </select>
+        <select
+          id="priorityFilter"
+          class="h-10 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 text-sm"
+        >
+          <option value="">Semua Prioritas</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="urgent">Urgent</option>
+        </select>
+        <select
+          id="assigneeFilter"
+          class="h-10 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 text-sm"
+        >
+          <option value="">Semua Assignee</option>
+        </select>
+
+        <div class="flex items-center gap-2">
+          <button
+            id="addBtn"
+            class="h-10 px-3 rounded-lg text-sm bg-brand-600 text-white hover:bg-brand-700"
+          >
+            + Tambah
+          </button>
+          <button
+            id="viewList"
+            class="h-10 px-3 rounded-lg text-sm border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            List
+          </button>
+          <button
+            id="viewKanban"
+            class="h-10 px-3 rounded-lg text-sm border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            Kanban
+          </button>
+          <span
+            id="countBadge"
+            class="ml-auto text-xs px-2 py-1 rounded-full bg-slate-200/70 dark:bg-slate-800/70"
+          ></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <!-- List View -->
+      <section id="listView" class="grid gap-4" data-open="true">
+        <!-- Desktop table -->
+        <div
+          class="hidden md:block rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-soft overflow-hidden"
+        >
+          <table class="w-full text-sm">
+            <thead
+              class="bg-slate-50/60 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-800"
+            >
+              <tr class="text-left">
+                <th class="px-4 py-3 w-10">#</th>
+                <th class="px-4 py-3">Judul</th>
+                <th class="px-4 py-3">Project</th>
+                <th class="px-4 py-3">Status</th>
+                <th class="px-4 py-3">Prioritas</th>
+                <th class="px-4 py-3">Assignees</th>
+                <th class="px-4 py-3">Jatuh Tempo</th>
+                <th class="px-4 py-3">Label</th>
+              </tr>
+            </thead>
+            <tbody id="listBody"></tbody>
+          </table>
+        </div>
+
+        <!-- Mobile cards -->
+        <div id="listCards" class="md:hidden grid gap-3"></div>
+      </section>
+
+      <!-- Kanban View -->
+      <section id="kanbanView" class="grid gap-4" data-open="false">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="kan-col" data-status="todo"></div>
+          <div class="kan-col" data-status="in_progress"></div>
+          <div class="kan-col" data-status="blocked"></div>
+          <div class="kan-col" data-status="done"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Floating Add (mobile) -->
+    <button
+      id="fab"
+      class="md:hidden fixed bottom-5 right-5 h-12 w-12 rounded-full bg-brand-600 text-white shadow-soft grid place-items-center"
+    >
+      ＋
+    </button>
+
+    <!-- Modal Tambah/Edit -->
+    <dialog
+      id="todoModal"
+      class="rounded-2xl w-[min(720px,calc(100%-2rem))] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+    >
+      <form id="todoForm" method="dialog" class="p-4 sm:p-6">
+        <div class="flex items-start gap-3">
+          <h3 class="font-semibold text-lg">Task</h3>
+          <button
+            type="button"
+            id="closeModal"
+            class="ml-auto px-2 py-1 rounded-md border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            ✕
+          </button>
+        </div>
+
+        <input type="hidden" id="todoId" />
+
+        <div class="grid sm:grid-cols-2 gap-4 mt-4">
+          <label class="grid gap-1">
+            <span class="text-sm"
+              >Judul <span class="text-red-600">*</span></span
+            >
+            <input
+              id="f_title"
+              required
+              class="h-10 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-sm"
+            />
+          </label>
+
+          <label class="grid gap-1">
+            <span class="text-sm"
+              >Project <span class="text-red-600">*</span></span
+            >
+            <select
+              id="f_project"
+              required
+              class="h-10 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-sm"
+            ></select>
+          </label>
+
+          <label class="grid gap-1">
+            <span class="text-sm">Status</span>
+            <select
+              id="f_status"
+              class="h-10 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-sm"
+            >
+              <option value="todo">Todo</option>
+              <option value="in_progress">In Progress</option>
+              <option value="blocked">Blocked</option>
+              <option value="done">Done</option>
+              <option value="archived">Archived</option>
+            </select>
+          </label>
+
+          <label class="grid gap-1">
+            <span class="text-sm">Prioritas</span>
+            <select
+              id="f_priority"
+              class="h-10 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-sm"
+            >
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </label>
+
+          <label class="grid gap-1">
+            <span class="text-sm">Assignees (Ctrl/Cmd untuk multi)</span>
+            <select
+              id="f_assignees"
+              multiple
+              size="4"
+              class="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
+            ></select>
+          </label>
+
+          <label class="grid gap-1">
+            <span class="text-sm">Label</span>
+            <select
+              id="f_labels"
+              multiple
+              size="4"
+              class="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
+            ></select>
+          </label>
+
+          <label class="grid gap-1 sm:col-span-2">
+            <span class="text-sm">Deskripsi</span>
+            <textarea
+              id="f_desc"
+              rows="3"
+              class="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
+            ></textarea>
+          </label>
+
+          <label class="grid gap-1">
+            <span class="text-sm">Jatuh Tempo</span>
+            <input
+              id="f_due"
+              type="date"
+              class="h-10 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-sm"
+            />
+          </label>
+
+          <label class="grid gap-1">
+            <span class="text-sm">Pinned?</span>
+            <select
+              id="f_pinned"
+              class="h-10 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-sm"
+            >
+              <option value="false">Tidak</option>
+              <option value="true">Ya</option>
+            </select>
+          </label>
+        </div>
+
+        <!-- Checklist editor -->
+        <div class="mt-4">
+          <div class="flex items-center gap-2">
+            <h4 class="font-medium">Checklist</h4>
+            <div class="text-xs text-slate-500">
+              Tambah item, centang untuk done
+            </div>
+          </div>
+          <div class="mt-2 flex gap-2">
+            <input
+              id="chkInput"
+              class="flex-1 h-10 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-sm"
+              placeholder="Tulis item checklist..."
+            />
+            <button
+              type="button"
+              id="chkAdd"
+              class="h-10 px-3 rounded-lg text-sm border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              Tambah
+            </button>
+          </div>
+          <ul id="chkList" class="mt-2 space-y-1"></ul>
+        </div>
+
+        <div class="mt-6 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            id="deleteBtn"
+            class="hidden h-10 px-4 rounded-lg text-sm border border-red-300 text-red-700 hover:bg-red-50"
+          >
+            Hapus
+          </button>
+          <button
+            type="button"
+            id="cancelBtn"
+            class="h-10 px-4 rounded-lg text-sm border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            Batal
+          </button>
+          <button
+            id="saveBtn"
+            class="h-10 px-4 rounded-lg text-sm bg-brand-600 text-white hover:bg-brand-700"
+          >
+            Simpan
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Toast -->
+    <div
+      id="toast"
+      class="fixed bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg text-sm bg-slate-900 text-white shadow-soft hidden"
+    ></div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // ---- Data (nyambung skema) ----
+        const users = [
+          { id: 1, name: "Suraji", email: "suraji@example.com", avatarUrl: "" },
+          { id: 2, name: "Dina", email: "dina@example.com", avatarUrl: "" },
+          { id: 3, name: "Bima", email: "bima@example.com", avatarUrl: "" },
+        ];
+        const projects = [
+          {
+            id: 10,
+            ownerId: 1,
+            name: "Aplikasi Desa",
+            key: "APP",
+            color: "brand-600",
+          },
+          {
+            id: 11,
+            ownerId: 1,
+            name: "Website AFaa",
+            key: "AF",
+            color: "emerald-600",
+          },
+        ];
+        const labels = [
+          { id: 100, projectId: 10, name: "bug", color: "red-600" },
+          { id: 101, projectId: 10, name: "backend", color: "amber-600" },
+          { id: 102, projectId: 11, name: "ui", color: "sky-600" },
+        ];
+        let todos = [
+          {
+            id: 1000,
+            projectId: 10,
+            creatorId: 1,
+            title: "Rancang skema DB Todo",
+            description:
+              "Buat tabel todos, labels, assignees, checklist, attachments",
+            status: "in_progress",
+            priority: "high",
+            dueAt: addDays(new Date(), 2),
+            labelIds: [101],
+            assignees: [2],
+            checklist: [
+              { id: 1, title: "Tabel todos", isDone: true },
+              { id: 2, title: "Tabel labels", isDone: false },
+            ],
+            comments: 2,
+            isPinned: true,
+            order: 1,
+          },
+          {
+            id: 1001,
+            projectId: 10,
+            creatorId: 1,
+            title: "Implement API Elysia",
+            description: "CRUD /todos, /labels, /projects, pagination & filter",
+            status: "todo",
+            priority: "urgent",
+            dueAt: addDays(new Date(), 1),
+            labelIds: [101],
+            assignees: [1, 3],
+            checklist: [],
+            comments: 1,
+            order: 2,
+          },
+          {
+            id: 1002,
+            projectId: 11,
+            creatorId: 1,
+            title: "Desain UI Landing AFaa",
+            description: "Hero, fitur, testimoni, CTA, warna konsisten",
+            status: "blocked",
+            priority: "medium",
+            dueAt: addDays(new Date(), 5),
+            labelIds: [102],
+            assignees: [2],
+            checklist: [{ id: 1, title: "Wireframe", isDone: false }],
+            comments: 0,
+            order: 1,
+          },
+          {
+            id: 1003,
+            projectId: 11,
+            creatorId: 1,
+            title: "Fix Bug Responsif",
+            description: "Navbar pecah di layar 320px",
+            status: "done",
+            priority: "low",
+            dueAt: addDays(new Date(), -1),
+            labelIds: [102],
+            assignees: [3],
+            checklist: [{ id: 1, title: "Re-test 320px", isDone: true }],
+            comments: 4,
+            order: 1,
+          },
+        ];
+
+        // ---- Utils ----
+        function addDays(date, d) {
+          const x = new Date(date);
+          x.setDate(x.getDate() + d);
+          return x;
+        }
+        function fmtDate(d) {
+          if (!d) return "-";
+          try {
+            const dt = d instanceof Date ? d : new Date(d);
+            return dt.toLocaleDateString("id-ID", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            });
+          } catch {
+            return "-";
+          }
+        }
+        function dateToInput(d) {
+          if (!d) return "";
+          const x = d instanceof Date ? d : new Date(d);
+          return x.toISOString().slice(0, 10);
+        }
+        function byId(id) {
+          return document.getElementById(id);
+        }
+        function getProjectName(id) {
+          const p = projects.find((x) => x.id === id);
+          return p ? p.name : "-";
+        }
+        function getUserName(id) {
+          const u = users.find((x) => x.id === id);
+          return u ? u.name : "?";
+        }
+        function getLabelObj(id) {
+          return labels.find((x) => x.id === id);
+        }
+        function inText(h, n) {
+          return h.toLowerCase().includes((n || "").trim().toLowerCase());
+        }
+        function escapeHtml(s) {
+          return String(s)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+        }
+        function toast(msg) {
+          const el = byId("toast");
+          el.textContent = msg;
+          el.classList.remove("hidden");
+          setTimeout(() => el.classList.add("hidden"), 1500);
+        }
+
+        // ---- State & DOM ----
+        const state = {
+          view: "list",
+          q: "",
+          projectId: "",
+          status: "",
+          priority: "",
+          assignee: "",
+          dark: false,
+          draggingId: null,
+        };
+
+        const listView = byId("listView"),
+          kanbanView = byId("kanbanView");
+        const listBody = byId("listBody"),
+          listCards = byId("listCards"),
+          countBadge = byId("countBadge");
+        const qInput = byId("q"),
+          projectFilter = byId("projectFilter"),
+          statusFilter = byId("statusFilter"),
+          priorityFilter = byId("priorityFilter"),
+          assigneeFilter = byId("assigneeFilter");
+        const viewListBtn = byId("viewList"),
+          viewKanbanBtn = byId("viewKanban"),
+          themeBtn = byId("themeBtn"),
+          addBtn = byId("addBtn"),
+          fab = byId("fab");
+
+        const modal = byId("todoModal"),
+          form = byId("todoForm"),
+          closeModalBtn = byId("closeModal"),
+          cancelBtn = byId("cancelBtn"),
+          deleteBtn = byId("deleteBtn"),
+          saveBtn = byId("saveBtn");
+        const fId = byId("todoId"),
+          fTitle = byId("f_title"),
+          fProject = byId("f_project"),
+          fStatus = byId("f_status"),
+          fPriority = byId("f_priority"),
+          fAssignees = byId("f_assignees"),
+          fLabels = byId("f_labels"),
+          fDesc = byId("f_desc"),
+          fDue = byId("f_due"),
+          fPinned = byId("f_pinned");
+        const chkInput = byId("chkInput"),
+          chkAdd = byId("chkAdd"),
+          chkList = byId("chkList");
+
+        // ---- Init select options ----
+        function initFilters() {
+          for (const p of projects) {
+            const o1 = document.createElement("option");
+            o1.value = String(p.id);
+            o1.textContent = p.name;
+            projectFilter.appendChild(o1);
+            const o2 = document.createElement("option");
+            o2.value = String(p.id);
+            o2.textContent = p.name;
+            fProject.appendChild(o2);
+          }
+          for (const u of users) {
+            const a = document.createElement("option");
+            a.value = String(u.id);
+            a.textContent = u.name;
+            assigneeFilter.appendChild(a);
+            const b = document.createElement("option");
+            b.value = String(u.id);
+            b.textContent = u.name;
+            fAssignees.appendChild(b);
+          }
+          for (const l of labels) {
+            const o = document.createElement("option");
+            o.value = String(l.id);
+            o.textContent = `${l.name} (${getProjectName(l.projectId)})`;
+            fLabels.appendChild(o);
+          }
+        }
+
+        // ---- Filtering ----
+        function filteredTodos() {
+          return todos.filter((t) => {
+            if (state.projectId && String(t.projectId) !== state.projectId)
+              return false;
+            if (state.status && t.status !== state.status) return false;
+            if (state.priority && t.priority !== state.priority) return false;
+            if (state.assignee && !t.assignees.includes(Number(state.assignee)))
+              return false;
+            if (state.q) {
+              const hay = `${t.title} ${t.description || ""} ${getProjectName(
+                t.projectId
+              )} ${t.assignees.map(getUserName).join(" ")}`;
+              if (!inText(hay, state.q)) return false;
+            }
+            return true;
+          });
+        }
+
+        // ---- Badges ----
+        function badge(text, tone) {
+          const m = {
+            gray: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200",
+            blue: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200",
+            green:
+              "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200",
+            red: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200",
+            amber:
+              "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
+            purple:
+              "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-200",
+          };
+          return `<span class="px-2 py-0.5 rounded-full text-xs ${
+            m[tone] || m.gray
+          }">${text}</span>`;
+        }
+        function statusBadge(s) {
+          const m = {
+            todo: badge("Todo", "gray"),
+            in_progress: badge("In Progress", "blue"),
+            blocked: badge("Blocked", "red"),
+            done: badge("Done", "green"),
+            archived: badge("Archived", "purple"),
+          };
+          return m[s] || badge(s, "gray");
+        }
+        function priorityBadge(p) {
+          const m = {
+            low: badge("Low", "gray"),
+            medium: badge("Medium", "blue"),
+            high: badge("High", "amber"),
+            urgent: badge("Urgent", "red"),
+          };
+          return m[p] || badge(p, "gray");
+        }
+
+        // ---- Render List (desktop table) ----
+        function renderListTable() {
+          const items = filteredTodos();
+          listBody.innerHTML = "";
+          let i = 0;
+          for (const t of items) {
+            const ass = t.assignees
+              .map(getUserName)
+              .map((n) => badge(n, "gray"))
+              .join(" ");
+            const labs = (t.labelIds || [])
+              .map(getLabelObj)
+              .filter(Boolean)
+              .map((l) => badge(l.name, "purple"))
+              .join(" ");
+            const due = fmtDate(t.dueAt);
+            const pinned = t.isPinned ? "⭐ " : "";
+            const tr = document.createElement("tr");
+            tr.className =
+              "border-b border-slate-200/80 dark:border-slate-800/80 hover:bg-slate-50/60 dark:hover:bg-slate-900/40 cursor-pointer";
+            tr.dataset.id = String(t.id);
+            tr.innerHTML = `
+          <td class="px-4 py-3 align-top">${++i}</td>
+          <td class="px-4 py-3 align-top">
+            <div class="font-medium">${pinned}${escapeHtml(t.title)}</div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate-2">${escapeHtml(
+              t.description || ""
+            )}</p>
+            <div class="mt-2 flex flex-wrap gap-1">${labs}</div>
+          </td>
+          <td class="px-4 py-3 align-top">${escapeHtml(
+            getProjectName(t.projectId)
+          )}</td>
+          <td class="px-4 py-3 align-top">${statusBadge(t.status)}</td>
+          <td class="px-4 py-3 align-top">${priorityBadge(t.priority)}</td>
+          <td class="px-4 py-3 align-top"><div class="flex flex-wrap gap-1">${ass}</div></td>
+          <td class="px-4 py-3 align-top">${due}</td>
+          <td class="px-4 py-3 align-top text-xs text-slate-500">💬 ${
+            t.comments || 0
+          }</td>
+        `;
+            listBody.appendChild(tr);
+          }
+        }
+
+        // ---- Render List (mobile cards) ----
+        function renderListCards() {
+          const items = filteredTodos();
+          listCards.innerHTML = "";
+          for (const t of items) {
+            const labs = (t.labelIds || [])
+              .map(getLabelObj)
+              .filter(Boolean)
+              .map((l) => badge(l.name, "purple"))
+              .join(" ");
+            const ass = t.assignees
+              .map(getUserName)
+              .map((n) => badge(n, "gray"))
+              .join(" ");
+            const pinned = t.isPinned ? "⭐ " : "";
+            const el = document.createElement("article");
+            el.className =
+              "rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-soft";
+            el.dataset.id = String(t.id);
+            el.innerHTML = `
+          <div class="flex items-start justify-between gap-2">
+            <h3 class="font-medium">${pinned}${escapeHtml(t.title)}</h3>
+            ${priorityBadge(t.priority)}
+          </div>
+          <p class="mt-1 text-sm text-slate-600 dark:text-slate-300 truncate-2">${escapeHtml(
+            t.description || ""
+          )}</p>
+          <div class="mt-2 flex flex-wrap gap-1">${labs}</div>
+          <div class="mt-3 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              ${statusBadge(
+                t.status
+              )} <span class="text-slate-500">📅 ${fmtDate(t.dueAt)}</span>
+            </div>
+            <span>💬 ${t.comments || 0}</span>
+          </div>
+          <div class="mt-2 flex flex-wrap gap-1">${ass}</div>
+          <div class="mt-2 text-xs text-slate-500">${escapeHtml(
+            getProjectName(t.projectId)
+          )}</div>
+        `;
+            el.addEventListener("click", () => openModal(t));
+            listCards.appendChild(el);
+          }
+        }
+
+        function renderList() {
+          renderListTable();
+          renderListCards();
+          countBadge.textContent = `${filteredTodos().length} task`;
+        }
+
+        // ---- Kanban + DnD ----
+        function renderKanban() {
+          const cols = Array.from(document.querySelectorAll(".kan-col"));
+          const mapTitle = {
+            todo: "Todo",
+            in_progress: "In Progress",
+            blocked: "Blocked",
+            done: "Done",
+          };
+          for (const col of cols) {
+            const st = col.getAttribute("data-status");
+            const items = filteredTodos()
+              .filter((t) => t.status === st)
+              .sort((a, b) => (a.order || 0) - (b.order || 0));
+            col.innerHTML = `
+          <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-soft h-full flex flex-col">
+            <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div class="font-semibold">${mapTitle[st] || st}</div>
+              <div class="text-xs px-2 py-0.5 rounded-full bg-slate-200/70 dark:bg-slate-800/70">${
+                items.length
+              }</div>
+            </div>
+            <div class="p-3 thin-scrollbar space-y-3 max-h-[70vh] overflow-auto dropzone" data-status="${st}">
+              ${
+                items.map(cardHtml).join("") ||
+                `<div class="text-sm text-slate-500">Tidak ada task</div>`
+              }
+            </div>
+          </div>
+        `;
+          }
+          document.querySelectorAll(".card").forEach((c) => {
+            c.addEventListener("dragstart", onDragStart);
+            c.addEventListener("dragend", onDragEnd);
+            c.addEventListener("dblclick", () =>
+              openModal(todos.find((x) => x.id === Number(c.dataset.id)))
+            );
+            c.addEventListener("click", () =>
+              openModal(todos.find((x) => x.id === Number(c.dataset.id)))
+            );
+          });
+          document.querySelectorAll(".dropzone").forEach((z) => {
+            z.addEventListener("dragover", onDragOver);
+            z.addEventListener("dragleave", onDragLeave);
+            z.addEventListener("drop", onDrop);
+          });
+          countBadge.textContent = `${filteredTodos().length} task`;
+        }
+
+        function cardHtml(t) {
+          const labs = (t.labelIds || [])
+            .map(getLabelObj)
+            .filter(Boolean)
+            .map((l) => badge(l.name, "purple"))
+            .join(" ");
+          const ass = t.assignees
+            .map(getUserName)
+            .map((n) => badge(n, "gray"))
+            .join(" ");
+          const done = (t.checklist || []).filter((c) => c.isDone).length;
+          const all = (t.checklist || []).length;
+          const pinned = t.isPinned ? "⭐ " : "";
+          return `
+        <article class="card rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 p-3 cursor-grab active:cursor-grabbing"
+          draggable="true" data-id="${t.id}" tabindex="0">
+          <div class="flex items-start justify-between gap-2">
+            <h3 class="font-medium">${pinned}${escapeHtml(t.title)}</h3>
+            ${priorityBadge(t.priority)}
+          </div>
+          <p class="mt-1 text-sm text-slate-600 dark:text-slate-300 truncate-2">${escapeHtml(
+            t.description || ""
+          )}</p>
+          <div class="mt-2 flex flex-wrap gap-1">${labs}</div>
+          <div class="mt-3 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              ${statusBadge(
+                t.status
+              )} <span class="text-slate-500">📅 ${fmtDate(t.dueAt)}</span>
+            </div>
+            <div class="flex items-center gap-2">${
+              all ? `<span>☑️ ${done}/${all}</span>` : ""
+            } <span>💬 ${t.comments || 0}</span></div>
+          </div>
+          <div class="mt-2 flex flex-wrap gap-1">${ass}</div>
+          <div class="mt-2 text-xs text-slate-500">${escapeHtml(
+            getProjectName(t.projectId)
+          )}</div>
+        </article>
+      `;
+        }
+
+        // DnD handlers
+        function onDragStart(e) {
+          const id = e.currentTarget.dataset.id;
+          state.draggingId = Number(id);
+          e.dataTransfer.setData("text/plain", id);
+          e.dataTransfer.effectAllowed = "move";
+        }
+        function onDragEnd() {
+          state.draggingId = null;
+        }
+        function onDragOver(e) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          e.currentTarget.classList.add("drop-hover");
+        }
+        function onDragLeave(e) {
+          e.currentTarget.classList.remove("drop-hover");
+        }
+        function onDrop(e) {
+          e.preventDefault();
+          e.currentTarget.classList.remove("drop-hover");
+          const id = Number(
+            e.dataTransfer.getData("text/plain") || state.draggingId
+          );
+          const status = e.currentTarget.getAttribute("data-status");
+          const t = todos.find((x) => x.id === id);
+          if (!t) return;
+          t.status = status;
+          const same = todos.filter((x) => x.status === status);
+          t.order = same.reduce((m, x) => Math.max(m, x.order || 0), 0) + 1;
+          rerender();
+          toast("Dipindahkan");
+        }
+
+        // ---- Modal Tambah/Edit ----
+        function openModal(todo) {
+          form.reset();
+          fAssignees
+            .querySelectorAll("option")
+            .forEach((o) => (o.selected = false));
+          fLabels
+            .querySelectorAll("option")
+            .forEach((o) => (o.selected = false));
+          deleteBtn.classList.add("hidden");
+          chkList.innerHTML = "";
+          if (todo) {
+            fId.value = String(todo.id);
+            fTitle.value = todo.title || "";
+            fProject.value = String(todo.projectId);
+            fStatus.value = todo.status || "todo";
+            fPriority.value = todo.priority || "medium";
+            fDesc.value = todo.description || "";
+            fDue.value = dateToInput(todo.dueAt);
+            fPinned.value = todo.isPinned ? "true" : "false";
+            (todo.assignees || []).forEach((uid) => {
+              const o = [...fAssignees.options].find(
+                (x) => Number(x.value) === uid
+              );
+              if (o) o.selected = true;
+            });
+            (todo.labelIds || []).forEach((lid) => {
+              const o = [...fLabels.options].find(
+                (x) => Number(x.value) === lid
+              );
+              if (o) o.selected = true;
+            });
+            for (const c of todo.checklist || [])
+              addChkRow(c.id, c.title, c.isDone);
+            deleteBtn.classList.remove("hidden");
+          } else {
+            fId.value = "";
+            fStatus.value = "todo";
+            fPriority.value = "medium";
+            fPinned.value = "false";
+          }
+          if (typeof modal.showModal === "function") modal.showModal();
+          else modal.setAttribute("open", "");
+          fTitle.focus();
+        }
+        function closeModal() {
+          if (typeof modal.close === "function") modal.close();
+          else modal.removeAttribute("open");
+        }
+        function getMulti(sel) {
+          const out = [];
+          for (const o of sel.options) {
+            if (o.selected) out.push(Number(o.value));
+          }
+          return out;
+        }
+
+        // Checklist editor
+        function addChkRow(id, title, isDone) {
+          const li = document.createElement("li");
+          li.className =
+            "flex items-center gap-2 p-2 rounded-lg border border-slate-200 dark:border-slate-800";
+          li.dataset.id = String(id);
+          li.innerHTML = `
+        <input type="checkbox" class="chk-done" ${isDone ? "checked" : ""}/>
+        <input type="text" class="flex-1 text-sm bg-transparent outline-none" value="${escapeHtml(
+          title
+        )}" />
+        <button type="button" class="px-2 py-1 text-xs rounded-md border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">Hapus</button>
+      `;
+          li.querySelector(".chk-done").addEventListener("change", () => {
+            /* visual only */
+          });
+          li.querySelector("button").addEventListener("click", () =>
+            li.remove()
+          );
+          chkList.appendChild(li);
+        }
+        chkAdd.addEventListener("click", () => {
+          const v = (chkInput.value || "").trim();
+          if (!v) return;
+          const id = Date.now();
+          addChkRow(id, v, false);
+          chkInput.value = "";
+        });
+
+        // Save / Delete
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const id = fId.value.trim();
+          const base = {
+            title: fTitle.value.trim(),
+            projectId: Number(fProject.value),
+            status: fStatus.value,
+            priority: fPriority.value,
+            assignees: getMulti(fAssignees),
+            labelIds: getMulti(fLabels),
+            description: fDesc.value.trim(),
+            dueAt: fDue.value ? new Date(fDue.value + "T00:00:00") : null,
+            isPinned: fPinned.value === "true",
+            checklist: [...chkList.querySelectorAll("li")].map((li) => ({
+              id: Number(li.dataset.id),
+              title: li.querySelector('input[type="text"]').value.trim(),
+              isDone: li.querySelector(".chk-done").checked,
+            })),
+          };
+          if (!base.title || !base.projectId) {
+            alert("Judul dan Project wajib diisi");
+            return;
+          }
+
+          if (id) {
+            // update
+            const t = todos.find((x) => String(x.id) === id);
+            if (!t) return;
+            Object.assign(t, base);
+            toast("Perubahan disimpan");
+          } else {
+            // create
+            const newId = Math.max(0, ...todos.map((x) => x.id)) + 1;
+            const same = todos.filter((x) => x.status === base.status);
+            const maxOrder = same.reduce(
+              (m, x) => Math.max(m, x.order || 0),
+              0
+            );
+            todos.push({
+              id: newId,
+              creatorId: 1,
+              comments: 0,
+              order: maxOrder + 1,
+              ...base,
+            });
+            toast("Task ditambahkan");
+          }
+          closeModal();
+          rerender();
+        });
+
+        deleteBtn.addEventListener("click", () => {
+          const id = Number(fId.value);
+          if (!id) return;
+          todos = todos.filter((t) => t.id !== id);
+          toast("Task dihapus");
+          closeModal();
+          rerender();
+        });
+        closeModalBtn.addEventListener("click", closeModal);
+        cancelBtn.addEventListener("click", closeModal);
+
+        // ---- Events umum ----
+        function bindEvents() {
+          qInput.addEventListener("input", () => {
+            state.q = qInput.value;
+            rerender();
+          });
+          projectFilter.addEventListener("change", () => {
+            state.projectId = projectFilter.value;
+            rerender();
+          });
+          statusFilter.addEventListener("change", () => {
+            state.status = statusFilter.value;
+            rerender();
+          });
+          priorityFilter.addEventListener("change", () => {
+            state.priority = priorityFilter.value;
+            rerender();
+          });
+          assigneeFilter.addEventListener("change", () => {
+            state.assignee = assigneeFilter.value;
+            rerender();
+          });
+
+          viewListBtn.addEventListener("click", () => {
+            state.view = "list";
+            listView.dataset.open = "true";
+            kanbanView.dataset.open = "false";
+            renderList();
+          });
+          viewKanbanBtn.addEventListener("click", () => {
+            state.view = "kanban";
+            listView.dataset.open = "false";
+            kanbanView.dataset.open = "true";
+            renderKanban();
+          });
+
+          themeBtn.addEventListener("click", () => {
+            state.dark = !state.dark;
+            document.documentElement.classList.toggle("dark", state.dark);
+          });
+          addBtn.addEventListener("click", () => openModal(null));
+          fab.addEventListener("click", () => openModal(null));
+
+          // click to edit (desktop table)
+          listBody.addEventListener("click", (e) => {
+            const tr = e.target.closest("tr");
+            if (!tr) return;
+            const id = Number(tr.dataset.id);
+            const t = todos.find((x) => x.id === id);
+            if (t) openModal(t);
+          });
+
+          // ESC to close
+          document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && modal.open) closeModal();
+          });
+
+          // click backdrop to close
+          modal.addEventListener("click", (e) => {
+            const r = modal.getBoundingClientRect();
+            const inside =
+              e.clientX >= r.left &&
+              e.clientX <= r.right &&
+              e.clientY >= r.top &&
+              e.clientY <= r.bottom;
+            if (!inside) closeModal();
+          });
+        }
+
+        // ---- Initial ----
+        function rerender() {
+          state.view === "list" ? renderList() : renderKanban();
+        }
+        function init() {
+          try {
+            state.dark =
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches;
+            document.documentElement.classList.toggle("dark", state.dark);
+          } catch {}
+          initFilters();
+          bindEvents();
+          renderList();
+          countBadge.textContent = `${filteredTodos().length} task`;
+        }
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", init);
+        } else {
+          init();
+        }
+      })();
+    </script>
+  </body>
+</html>

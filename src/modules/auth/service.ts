@@ -1,34 +1,46 @@
-// src/modules/auth/service.ts
-import { sql } from "@elysiajs/sql"; // contoh, ganti dengan ORM/DB milikmu
-import bcrypt from "bcryptjs";
+import { db } from "../../db/clients";
+import { users } from "../../db/schema";
 
-export abstract class AuthService {
-  /** Cari user berdasarkan email, return null bila tidak ada */
-  static async findUserByEmail(email: string) {
-    const rows = await sql`
-      SELECT id, email, password_hash
-      FROM users
-      WHERE email = ${email}
-      LIMIT 1`;
-    return rows[0] ?? null;
-  }
+export const createUser = async (
+  username: string,
+  email: string,
+  passwordHash: string
+) => {
+  const newUser = await db.insert(users).values({
+    username,
+    email,
+    passwordHash,
+  });
+  console.log("Created User:", newUser);
+  return newUser;
+};
 
-  /** Verifikasi password & buat JWT payload */
-  static async validatePassword(plain: string, hash: string): Promise<boolean> {
-    return bcrypt.compare(plain, hash);
-  }
+export const findUserByUsername = async (username: string) => {
+  const user = await db.query.users.findFirst({
+    where: (users, { eq }) => eq(users.username, username),
+  });
+  return user;
+};
 
-  /** Generate token (payload bisa ditambah field lain) */
-  static async generateToken(userId: number) {
-    // payload standar: sub = user id
-    return {
-      sub: userId,
-      // tambahkan field lain bila diperlukan, contoh:
-      // role: 'admin'
-    };
-  }
+export const findUserById = async (id: string) => {
+  const user = await db.query.users.findFirst({
+    where: (users, { eq }) => eq(users.id, id),
+  });
+  return user;
+};
 
-  /** Logout tidak memerlukan logika di server jika memakai stateless JWT.
-   *  Namun bila ingin “blacklist” token, simpan token ke DB/Redis dan cek di middleware.
-   */
-}
+export const hashPassword = async (password: string) => {
+  return Bun.password.hash(password, {
+    algorithm: "argon2id",
+    memoryCost: 19456,
+    timeCost: 2,
+  });
+};
+
+export const verifyPassword = async (
+  password: string,
+  hashedPassword: string
+) => {
+  const isValid = await Bun.password.verify(password, hashedPassword);
+  return isValid;
+};

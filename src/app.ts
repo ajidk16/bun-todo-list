@@ -1,34 +1,39 @@
 // app.ts
 import { Elysia, t } from "elysia";
-import { jwt } from "@elysiajs/jwt";
-import { bearer } from "@elysiajs/bearer";
 import { authController } from "./modules/auth";
 import cors from "@elysiajs/cors";
+import { jwtPlugin } from "./plugin/jwt";
+import bearer from "@elysiajs/bearer";
 
-const blacklist = new Set<string>();
-export const addToBlacklist = (t: string) => blacklist.add(t);
-export const isBlacklisted = (t: string) => blacklist.has(t);
-
-const app = new Elysia({ prefix: "/api/v1" })
-  .use(
-    jwt({
-      name: "jwt",
-      secret: process.env.JWT_SECRET!,
-      exp: "1m", // 1 minute
-    })
-  )
-  .use(bearer())
+const app = new Elysia()
+  // .use(jwtPlugin)
   .use(cors())
-  .derive(async ({ jwt, cookie, bearer }) => {
-    const raw = cookie?.auth?.value ?? bearer;
-    if (!raw || isBlacklisted(String(raw))) return { user: null };
-
-    const payload = await jwt.verify(String(raw));
-    if (!payload) return { user: null };
-
-    return { user: payload };
+  .use(bearer())
+  .get("/", () => {
+    console.log("Elysia API accessed");
+    return "Elysia API is running!";
   })
-  .use(authController)
+  .group("/api/v1", (app) =>
+    app
+      .use(authController)
+      .guard({
+        beforeHandle: [
+          async ({ jwt, bearer, status }) => {
+            const token = await jwt.verify(bearer);
+            console.log("Verified Token:", token);
+            if (!token) return status(401, { error: "Unauthorized" });
+          },
+        ],
+      })
+      .get("/ayam", () => "Welcome to the Elysia API!")
+      .get("/me", async ({ jwt, status, bearer }) => {
+        const verifyToken = await jwt.verify(bearer);
+        if (!verifyToken) return status(401), { error: "Unauthorized" };
+
+        return { message: "Authenticated", user: verifyToken };
+      })
+  )
+
   .listen(3000);
 
 console.log("🚀 Server running on http://localhost:3000");
