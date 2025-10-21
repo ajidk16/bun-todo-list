@@ -1,15 +1,15 @@
 {
   "version": 2,
-  "functions": {
-    "src/**/*.js": {
-      "runtime": "bun",
-      "maxDuration": 10
+  "builds": [
+    {
+      "src": "src/server.ts",
+      "use": "@vercel/node"
     }
-  },
+  ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/src/$1"
+      "dest": "src/server.ts"
     }
   ]
 }
