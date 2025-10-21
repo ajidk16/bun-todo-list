@@ -1,7 +1,14 @@
 {
   "functions": {
-    "api/index.ts": { "runtime": "bun@latest" }
+    "api/index.ts": {
+      "runtime": "nodejs23.x"
+    }
   },
   "installCommand": "bun install",
-  "routes": [{ "src": "/(.*)", "dest": "api/index.ts" }]
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/index.ts"
+    }
+  ]
 }
