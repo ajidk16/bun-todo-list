@@ -2,11 +2,10 @@
 import { Elysia, t } from "elysia";
 import { authController } from "./modules/auth";
 import cors from "@elysiajs/cors";
-import { jwtPlugin } from "./plugin/jwt";
 import bearer from "@elysiajs/bearer";
+import { authGuard } from "./plugin/auth-guard";
 
-const app = new Elysia()
-  // .use(jwtPlugin)
+new Elysia()
   .use(cors())
   .use(bearer())
   .get("/", () => {
@@ -16,15 +15,7 @@ const app = new Elysia()
   .group("/api/v1", (app) =>
     app
       .use(authController)
-      .guard({
-        beforeHandle: [
-          async ({ jwt, bearer, status }) => {
-            const token = await jwt.verify(bearer);
-            console.log("Verified Token:", token);
-            if (!token) return status(401, { error: "Unauthorized" });
-          },
-        ],
-      })
+      .guard(authGuard)
       .get("/ayam", () => "Welcome to the Elysia API!")
       .get("/me", async ({ jwt, status, bearer }) => {
         const verifyToken = await jwt.verify(bearer);

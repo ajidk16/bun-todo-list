@@ -29,6 +29,7 @@ export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   username: varchar("username").notNull().unique(),
   email: text("email").notNull().unique(),
+  verifiedEmail: boolean("verified_email").notNull().default(false),
   passwordHash: text("password_hash").notNull(), // simpan password hash, bukan plaintext
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
