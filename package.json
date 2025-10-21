@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/app.ts",
-    "build": "tsdown src/app.ts -d api --dts",
+    "dev": "bun run --watch src/server.ts",
+    "build": "bun build ./src/server.ts --outdir dist --target bun",
     "email": "email dev --dir src/emails",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
