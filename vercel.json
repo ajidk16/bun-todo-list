@@ -1,15 +1,7 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "src/server.ts",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "src/server.ts"
-    }
-  ]
+  "functions": {
+    "api/index.ts": { "runtime": "bun@latest" }
+  },
+  "installCommand": "bun install",
+  "routes": [{ "src": "/(.*)", "dest": "api/index.ts" }]
 }

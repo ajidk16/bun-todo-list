@@ -6,7 +6,7 @@ import bearer from "@elysiajs/bearer";
 import { authGuard } from "./plugin/auth-guard";
 import { profileController } from "./modules/profiles";
 
-new Elysia()
+const app = new Elysia()
   .use(cors())
   .use(bearer())
   .get("/", () => {
@@ -20,12 +20,14 @@ new Elysia()
       .use(profileController)
       .get("/me", async ({ jwt, status, bearer }) => {
         const verifyToken = await jwt.verify(bearer);
-        if (!verifyToken) return status(401), { error: "Unauthorized" };
+        if (!verifyToken) return (status(401), { error: "Unauthorized" });
 
         return { message: "Authenticated", user: verifyToken };
       })
-  )
+  );
 
-  .listen(3000);
+// .listen(3000);
+
+export default app;
 
 console.log("🚀 Server running on http://localhost:3000");
