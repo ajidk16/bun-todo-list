@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/index.ts": {
-      "runtime": "nodejs23.x"
+      "runtime": "nodejs22.x"
     }
   },
   "installCommand": "bun install",
