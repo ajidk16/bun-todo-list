@@ -1,7 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "../../db/clients";
 import { users } from "../../db/schema";
-import argon2 from "argon2";
 import bcrypt from "bcrypt";
 
 export const createUser = async (

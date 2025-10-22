@@ -49,6 +49,5 @@
     "react-email": "^4.3.1",
     "tsdown": "^0.15.9",
     "tsx": "^4.20.6"
-  },
-  "module": "src/index.js"
+  }
 }
