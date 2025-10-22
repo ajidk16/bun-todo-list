@@ -14,8 +14,8 @@ export const profileController = new Elysia({ prefix: "/profile" })
     "/send-otp",
     async ({ query, request }) => {
       const to = query.to;
-      const url = new URL(request.url);
-      const baseURL = url.origin;
+      // const url = new URL(request.url);
+      // const baseURL = url.origin;
 
       const otp = (Math.floor(Math.random() * 900000) + 100000).toString();
 
@@ -26,7 +26,7 @@ export const profileController = new Elysia({ prefix: "/profile" })
       const html = renderToStaticMarkup(
         React.createElement(OTPEmail, {
           otp,
-          verifyUrl: `${baseURL}/api/v1/profile/otp/verify?email=${to}`,
+          // verifyUrl: `${baseURL}/api/v1/profile/otp/verify?email=${to}`,
           supportEmail: "surajidk12@gmail.com",
           brandName: "Todo List",
           expiresInMin: 10,

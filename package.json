@@ -3,9 +3,9 @@
   "version": "1.0.50",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "bun run api/index.ts",
     "dev": "bun run --watch src/server.ts",
-    "build": "tsdown src/index.ts -d public --dts",
+    "build": "tsdown src/index.ts -d api --dts",
     "email": "email dev --dir src/emails",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

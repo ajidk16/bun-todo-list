@@ -1,5 +1,5 @@
-// app.ts
-import { Elysia, t } from "elysia";
+// server.ts
+import { Elysia } from "elysia";
 import { authController } from "./modules/auth";
 import cors from "@elysiajs/cors";
 import bearer from "@elysiajs/bearer";
@@ -10,9 +10,9 @@ export const app = new Elysia()
   .use(cors())
   .use(bearer())
   .get("/", () => {
-    return "selamat datang suraji";
+    return { message: "selamat datang suraji" };
   })
-  .get("/suraji", () => "halo suraji!")
+  .get("/suraji", () => ({ message: "halo suraji!" }))
   .group("/api/v1", (app) =>
     app
       .use(authController)
@@ -24,7 +24,11 @@ export const app = new Elysia()
 
         return { message: "Authenticated", user: verifyToken };
       })
-  )
-  // .listen(3000, () => {
-  //   console.log("Server running at http://localhost:3000");
-  // });
+  );
+
+// Development server
+if (process.env.NODE_ENV !== "production") {
+  app.listen(5016, () => {
+    console.log("Server running at http://localhost:5016");
+  });
+}

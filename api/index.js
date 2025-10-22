@@ -362,9 +362,8 @@ OTPEmail.PreviewProps = {
 //#region src/modules/profiles/index.ts
 const resend = new Resend(process.env.RESEND_API_KEY);
 const otpStore = /* @__PURE__ */ new Map();
-const profileController = new Elysia({ prefix: "/profile" }).get("/send-otp", async ({ query, server }) => {
+const profileController = new Elysia({ prefix: "/profile" }).get("/send-otp", async ({ query, request }) => {
 	const to = query.to;
-	server.url.origin;
 	const otp = (Math.floor(Math.random() * 9e5) + 1e5).toString();
 	const expiresAt = Date.now() + 600 * 1e3;
 	otpStore.set(to, {
@@ -373,7 +372,6 @@ const profileController = new Elysia({ prefix: "/profile" }).get("/send-otp", as
 	});
 	const html = renderToStaticMarkup(React.createElement(OTPEmail, {
 		otp,
-		verifyUrl: `https://bun-todo-list-murex.vercel.app/api/v1/profile/otp/verify?email=${to}`,
 		supportEmail: "surajidk12@gmail.com",
 		brandName: "Todo List",
 		expiresInMin: 10
@@ -427,8 +425,8 @@ const profileController = new Elysia({ prefix: "/profile" }).get("/send-otp", as
 //#endregion
 //#region src/server.ts
 const app = new Elysia().use(cors()).use(bearer()).get("/", () => {
-	return "selamat datang suraji";
-}).get("/suraji", () => "halo suraji!").group("/api/v1", (app$1) => app$1.use(authController).guard(authGuard).use(profileController).get("/me", async ({ jwt: jwt$1, status, bearer: bearer$1 }) => {
+	return { message: "selamat datang suraji" };
+}).get("/suraji", () => ({ message: "halo suraji!" })).group("/api/v1", (app$1) => app$1.use(authController).guard(authGuard).use(profileController).get("/me", async ({ jwt: jwt$1, status, bearer: bearer$1 }) => {
 	const verifyToken = await jwt$1.verify(bearer$1);
 	if (!verifyToken) return status(401), { error: "Unauthorized" };
 	return {
@@ -436,6 +434,9 @@ const app = new Elysia().use(cors()).use(bearer()).get("/", () => {
 		user: verifyToken
 	};
 }));
+if (process.env.NODE_ENV !== "production") app.listen(5016, () => {
+	console.log("Server running at http://localhost:5016");
+});
 
 //#endregion
 //#region src/index.ts
