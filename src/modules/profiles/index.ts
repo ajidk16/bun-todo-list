@@ -12,9 +12,10 @@ const otpStore = new Map<string, { otp: string; expiresAt: number }>();
 export const profileController = new Elysia({ prefix: "/profile" })
   .get(
     "/send-otp",
-    async ({ query, server }) => {
+    async ({ query, request }) => {
       const to = query.to;
-      const baseURL = server.url.origin;
+      const url = new URL(request.url);
+      const baseURL = url.origin;
 
       const otp = (Math.floor(Math.random() * 900000) + 100000).toString();
 
@@ -25,7 +26,7 @@ export const profileController = new Elysia({ prefix: "/profile" })
       const html = renderToStaticMarkup(
         React.createElement(OTPEmail, {
           otp,
-          verifyUrl: `https://bun-todo-list-murex.vercel.app/api/v1/profile/otp/verify?email=${to}`,
+          verifyUrl: `${baseURL}/api/v1/profile/otp/verify?email=${to}`,
           supportEmail: "surajidk12@gmail.com",
           brandName: "Todo List",
           expiresInMin: 10,
