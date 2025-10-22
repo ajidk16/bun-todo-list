@@ -5,7 +5,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/server.ts",
-    "build": "bun build ./src/server.ts --outdir dist --target bun",
+    "build": "tsdown src/index.ts -d api --dts",
     "email": "email dev --dir src/emails",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
