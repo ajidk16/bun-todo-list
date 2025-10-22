@@ -1,9 +1,17 @@
+import { findUserById } from "../modules/auth/service";
+
 export const authGuard = {
   beforeHandle: [
     async ({ jwt, bearer, status }: any) => {
       const token = await jwt.verify(bearer);
-      // console.log("Verified Token:", token);
-      if (!token) return status(401, { error: "Unauthorized" });
+      if (!token) return status(401, { error: "Missing or invalid token" });
+
+      const user = await findUserById(token.id);
+      if (!user) return status(401, { error: "User not found" });
+
+      if (user.verifiedEmail === false) {
+        return status(403, { error: "Email not verified" });
+      }
     },
   ],
 };

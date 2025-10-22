@@ -4,9 +4,26 @@ import { authController } from "./modules/auth";
 import cors from "@elysiajs/cors";
 import bearer from "@elysiajs/bearer";
 import { authGuard } from "./plugin/auth-guard";
-import { profileController } from "./modules/profiles";
+import { otpController } from "./modules/otp";
+import { todoController } from "./modules/todos";
 
 export const app = new Elysia()
+  .onError(({ code, error, set }) => {
+    switch (code) {
+      case "VALIDATION":
+        set.status = 400;
+        return {
+          error: "Validation error",
+          details: error.all || error.message,
+        };
+      case "NOT_FOUND":
+        set.status = 404;
+        return { error: `Todo not found` };
+      default:
+        set.status = 500;
+        return { error: "Internal server error", message: error };
+    }
+  })
   .use(cors())
   .use(bearer())
   .get("/", () => {
@@ -16,8 +33,9 @@ export const app = new Elysia()
   .group("/api/v1", (app) =>
     app
       .use(authController)
+      .use(otpController)
       .guard(authGuard)
-      .use(profileController)
+      .use(todoController)
       .get("/me", async ({ jwt, status, bearer }) => {
         const verifyToken = await jwt.verify(bearer);
         if (!verifyToken) return (status(401), { error: "Unauthorized" });

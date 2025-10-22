@@ -1,3 +1,4 @@
+import { relations } from "drizzle-orm";
 import {
   pgTable,
   uuid,
@@ -5,9 +6,8 @@ import {
   boolean,
   timestamp,
   pgEnum,
-  varchar
+  varchar,
 } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 // ENUM untuk status dan prioritas
 export const todoStatus = pgEnum("todo_status", [
@@ -30,7 +30,7 @@ export const users = pgTable("users", {
   username: varchar("username").notNull().unique(),
   email: text("email").notNull().unique(),
   verifiedEmail: boolean("verified_email").notNull().default(false),
-  passwordHash: text("password_hash").notNull(), // simpan password hash, bukan plaintext
+  passwordHash: text("password_hash").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -43,23 +43,20 @@ export const todos = pgTable("todos", {
     .references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   description: text("description"),
-  isCompleted: boolean("is_completed").notNull().default(false),
-  status: todoStatus("status").notNull().default("pending"),
-  priority: todoPriority("priority").notNull().default("medium"),
+  isCompleted: boolean("is_completed").default(false),
+  status: todoStatus("status").default("pending"),
+  priority: todoPriority("priority").default("medium"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// Schema Zod untuk validasi
-export const UserInsertSchema = createInsertSchema(users);
-export const UserSelectSchema = createSelectSchema(users);
+export const todosRelations = relations(todos, ({ one }) => ({
+  user: one(users, {
+    fields: [todos.userId],
+    references: [users.id],
+  }),
+}));
 
-export const TodoInsertSchema = createInsertSchema(todos);
-export const TodoSelectSchema = createSelectSchema(todos);
-
-// Tipe TypeScript
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
-
-export type Todo = typeof todos.$inferSelect;
-export type NewTodo = typeof todos.$inferInsert;
+export const usersRelations = relations(users, ({ many }) => ({
+  todos: many(todos),
+}));

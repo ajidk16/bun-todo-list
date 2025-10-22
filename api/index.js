@@ -1,18 +1,18 @@
 import { Elysia, t } from "elysia";
-import { eq } from "drizzle-orm";
+import { eq, relations, sql } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { boolean, pgEnum, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import bcrypt from "bcrypt";
+import * as bcrypt from "bcrypt";
 import bearer from "@elysiajs/bearer";
 import jwt from "@elysiajs/jwt";
 import cors from "@elysiajs/cors";
-import { renderToStaticMarkup } from "react-dom/server";
 import * as React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { Resend } from "resend";
 import { Button, Column, Container, Row, Section, Tailwind, Text } from "@react-email/components";
 import { jsx, jsxs } from "react/jsx-runtime";
-import { Resend } from "resend";
+import z$1, { z } from "zod";
 
 //#region rolldown:runtime
 var __defProp = Object.defineProperty;
@@ -28,14 +28,12 @@ var __export = (all) => {
 //#endregion
 //#region src/db/schema.ts
 var schema_exports = /* @__PURE__ */ __export({
-	TodoInsertSchema: () => TodoInsertSchema,
-	TodoSelectSchema: () => TodoSelectSchema,
-	UserInsertSchema: () => UserInsertSchema,
-	UserSelectSchema: () => UserSelectSchema,
 	todoPriority: () => todoPriority,
 	todoStatus: () => todoStatus,
 	todos: () => todos,
-	users: () => users
+	todosRelations: () => todosRelations,
+	users: () => users,
+	usersRelations: () => usersRelations
 });
 const todoStatus = pgEnum("todo_status", [
 	"pending",
@@ -63,22 +61,23 @@ const todos = pgTable("todos", {
 	userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
 	title: text("title").notNull(),
 	description: text("description"),
-	isCompleted: boolean("is_completed").notNull().default(false),
-	status: todoStatus("status").notNull().default("pending"),
-	priority: todoPriority("priority").notNull().default("medium"),
+	isCompleted: boolean("is_completed").default(false),
+	status: todoStatus("status").default("pending"),
+	priority: todoPriority("priority").default("medium"),
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 	updatedAt: timestamp("updated_at").notNull().defaultNow()
 });
-const UserInsertSchema = createInsertSchema(users);
-const UserSelectSchema = createSelectSchema(users);
-const TodoInsertSchema = createInsertSchema(todos);
-const TodoSelectSchema = createSelectSchema(todos);
+const todosRelations = relations(todos, ({ one }) => ({ user: one(users, {
+	fields: [todos.userId],
+	references: [users.id]
+}) }));
+const usersRelations = relations(users, ({ many }) => ({ todos: many(todos) }));
 
 //#endregion
 //#region src/db/clients/index.ts
-const sql = neon(process.env.DATABASE_URL);
+const sql$1 = neon(process.env.DATABASE_URL);
 const db = drizzle({
-	client: sql,
+	client: sql$1,
 	schema: schema_exports
 });
 
@@ -225,8 +224,19 @@ const authController = new Elysia({ prefix: "/auth" }).use(jwtPlugin).use(bearer
 //#endregion
 //#region src/plugin/auth-guard.ts
 const authGuard = { beforeHandle: [async ({ jwt: jwt$1, bearer: bearer$1, status }) => {
-	if (!await jwt$1.verify(bearer$1)) return status(401, { error: "Unauthorized" });
+	const token = await jwt$1.verify(bearer$1);
+	if (!token) return status(401, { error: "Missing or invalid token" });
+	const user = await findUserById(token.id);
+	if (!user) return status(401, { error: "User not found" });
+	if (user.verifiedEmail === false) return status(403, { error: "Email not verified" });
 }] };
+
+//#endregion
+//#region src/modules/otp/model.ts
+const verifyOTP = t.Object({
+	to: t.String({ format: "email" }),
+	otp: t.Optional(t.String())
+});
 
 //#endregion
 //#region src/emails/otp.tsx
@@ -359,11 +369,10 @@ OTPEmail.PreviewProps = {
 };
 
 //#endregion
-//#region src/modules/profiles/index.ts
-const resend = new Resend(process.env.RESEND_API_KEY);
+//#region src/modules/otp/service.ts
 const otpStore = /* @__PURE__ */ new Map();
-const profileController = new Elysia({ prefix: "/profile" }).get("/send-otp", async ({ query, request }) => {
-	const to = query.to;
+const resend = new Resend(process.env.RESEND_API_KEY);
+async function sendOTP(to, baseURL) {
 	const otp = (Math.floor(Math.random() * 9e5) + 1e5).toString();
 	const expiresAt = Date.now() + 600 * 1e3;
 	otpStore.set(to, {
@@ -372,6 +381,7 @@ const profileController = new Elysia({ prefix: "/profile" }).get("/send-otp", as
 	});
 	const html = renderToStaticMarkup(React.createElement(OTPEmail, {
 		otp,
+		verifyUrl: `${baseURL}/api/v1/otp/verify?to=${to}&otp=${otp}`,
 		supportEmail: "surajidk12@gmail.com",
 		brandName: "Todo List",
 		expiresInMin: 10
@@ -386,12 +396,8 @@ const profileController = new Elysia({ prefix: "/profile" }).get("/send-otp", as
 		success: true,
 		message: "OTP sent"
 	};
-}, { query: t.Object({ to: t.String({ format: "email" }) }) }).get("/otp/verify", async ({ query, status }) => {
-	const email = query.email;
-	if (!await verifyEmail(email?.toString() || "")) return status(400), { error: "Email not registered" };
-	return status(200), { message: `Verify email: ${email}` };
-}).post("/otp/verify", async ({ body }) => {
-	const { to, otp: otpInput } = body;
+}
+async function verifyOTPHandler(to, otpInput) {
 	const record = otpStore.get(to);
 	if (!record) return {
 		success: false,
@@ -417,16 +423,175 @@ const profileController = new Elysia({ prefix: "/profile" }).get("/send-otp", as
 		success: true,
 		message: "OTP verified"
 	};
-}, { body: t.Object({
-	to: t.String({ format: "email" }),
-	otp: t.String()
-}) });
+}
+
+//#endregion
+//#region src/modules/otp/index.ts
+const otpController = new Elysia({ prefix: "/otp" }).get("/send", async ({ query, request }) => {
+	const to = query.to;
+	const baseURL = new URL(request.url).origin;
+	return await sendOTP(to, baseURL);
+}, { query: verifyOTP }).get("/verify", async ({ query }) => {
+	const { to, otp: otpInput } = query;
+	return await verifyOTPHandler(to, otpInput);
+}, { query: verifyOTP });
+
+//#endregion
+//#region src/modules/todos/service.ts
+const listTodos = async ({ page, limit, search }) => {
+	const searchQuery = `%${search}%`;
+	return {
+		todos: await db.query.todos.findMany({
+			with: { user: { columns: {
+				id: true,
+				username: true,
+				email: true,
+				verifiedEmail: true
+			} } },
+			limit,
+			offset: page,
+			where: (todo, { sql: sql$2 }) => sql$2`${todo.title} ILIKE ${searchQuery} OR ${todo.description} ILIKE ${searchQuery}`
+		}),
+		total: (await db.select({ count: sql`count(*)`.mapWith(Number) }).from(todos))[0]?.count || 0
+	};
+};
+const getTodoById = async (id) => {
+	return await db.query.todos.findFirst({ where: eq(todos.id, id) });
+};
+const createTodo = async ({ title, description, userId, isCompleted, status, priority }) => {
+	const [insert] = await db.insert(todos).values({
+		userId,
+		title,
+		description,
+		isCompleted,
+		status,
+		priority
+	}).returning();
+	console.log("Inserted todo:", insert);
+	return insert;
+};
+const updateTodo = async (id, data) => {
+	const [update] = await db.update(todos).set(data).where(eq(todos.id, id)).returning();
+	console.log("Updated todo:", update);
+	return update;
+};
+const deleteTodo = async (id) => {
+	const del = await db.delete(todos).where(eq(todos.id, id));
+	console.log("Deleted todo with id:", id);
+	return del;
+};
+
+//#endregion
+//#region src/modules/todos/model.ts
+const newTodo = z.object({
+	userId: z.string(),
+	title: z.string().min(1).max(255),
+	description: z.string().optional(),
+	isCompleted: z.coerce.boolean().optional(),
+	status: z.enum([
+		"pending",
+		"in_progress",
+		"completed",
+		"archived"
+	]).optional(),
+	priority: z.enum([
+		"low",
+		"medium",
+		"high",
+		"urgent"
+	]).optional()
+});
+const filterTodos = z.object({
+	page: z.coerce.number().optional().default(1),
+	limit: z.coerce.number().optional().default(10),
+	search: z.string().optional().default("")
+});
+
+//#endregion
+//#region src/modules/todos/index.ts
+const todoController = new Elysia({ prefix: "/todos" }).get("/", async ({ query: { page, limit, search }, status }) => {
+	const offset = (page - 1) * limit;
+	const { todos: todos$1, total } = await listTodos({
+		search: search.toLowerCase() ?? "",
+		page: offset,
+		limit
+	});
+	return status(200, {
+		message: "List of todos",
+		data: todos$1,
+		pagination: {
+			page,
+			limit,
+			total,
+			totalPages: Math.ceil(total / limit)
+		}
+	});
+}, { query: filterTodos }).get("/:id", async ({ params, status }) => {
+	const todo = await getTodoById(params.id);
+	return status(200, {
+		message: `Get todo with id ${params.id}`,
+		data: todo
+	});
+}).post("/", async ({ body, status }) => {
+	const { userId, title, description, isCompleted, status: isStatus, priority } = body;
+	return status(201, {
+		message: "Todo created",
+		data: await createTodo({
+			title,
+			description,
+			userId,
+			isCompleted,
+			status: isStatus,
+			priority
+		})
+	});
+}, { body: newTodo }).put("/:id", async ({ params, body, status }) => {
+	const id = params.id;
+	const { title, description, isCompleted, status: isStatus, priority } = body;
+	return status(200, {
+		message: "Todo updated",
+		data: await updateTodo(id, {
+			title,
+			description,
+			isCompleted,
+			status: isStatus,
+			priority
+		})
+	});
+}, {
+	params: z$1.object({ id: z$1.string() }),
+	body: newTodo.partial()
+}).delete("/:id", async ({ params: { id }, status }) => {
+	const todo = await deleteTodo(id);
+	return status(200), {
+		message: "Todo deleted",
+		data: todo
+	};
+});
 
 //#endregion
 //#region src/server.ts
-const app = new Elysia().use(cors()).use(bearer()).get("/", () => {
+const app = new Elysia().onError(({ code, error, set }) => {
+	switch (code) {
+		case "VALIDATION":
+			set.status = 400;
+			return {
+				error: "Validation error",
+				details: error.all || error.message
+			};
+		case "NOT_FOUND":
+			set.status = 404;
+			return { error: `Todo not found` };
+		default:
+			set.status = 500;
+			return {
+				error: "Internal server error",
+				message: error
+			};
+	}
+}).use(cors()).use(bearer()).get("/", () => {
 	return { message: "selamat datang suraji" };
-}).get("/suraji", () => ({ message: "halo suraji!" })).group("/api/v1", (app$1) => app$1.use(authController).guard(authGuard).use(profileController).get("/me", async ({ jwt: jwt$1, status, bearer: bearer$1 }) => {
+}).get("/suraji", () => ({ message: "halo suraji!" })).group("/api/v1", (app$1) => app$1.use(authController).use(otpController).guard(authGuard).use(todoController).get("/me", async ({ jwt: jwt$1, status, bearer: bearer$1 }) => {
 	const verifyToken = await jwt$1.verify(bearer$1);
 	if (!verifyToken) return status(401), { error: "Unauthorized" };
 	return {

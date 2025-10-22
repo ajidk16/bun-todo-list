@@ -38,7 +38,8 @@
     "react-dom": "^19.2.0",
     "resend": "^6.2.1",
     "server": "react-dom/server",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@kitajs/ts-html-plugin": "^4.1.3",
