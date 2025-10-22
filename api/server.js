@@ -427,9 +427,8 @@ const profileController = new Elysia({ prefix: "/profile" }).get("/otp", async (
 //#endregion
 //#region src/server.ts
 const app = new Elysia().use(cors()).use(bearer()).get("/", () => {
-	console.log("Elysia API accessed");
-	return "Elysia API is running!";
-}).group("/api/v1", (app$1) => app$1.use(authController).guard(authGuard).use(profileController).get("/me", async ({ jwt: jwt$1, status, bearer: bearer$1 }) => {
+	return "selamat datang suraji";
+}).get("/suraji", () => "halo suraji!").group("/api/v1", (app$1) => app$1.use(authController).guard(authGuard).use(profileController).get("/me", async ({ jwt: jwt$1, status, bearer: bearer$1 }) => {
 	const verifyToken = await jwt$1.verify(bearer$1);
 	if (!verifyToken) return status(401), { error: "Unauthorized" };
 	return {
@@ -437,10 +436,7 @@ const app = new Elysia().use(cors()).use(bearer()).get("/", () => {
 		user: verifyToken
 	};
 }));
+var server_default = app;
 
 //#endregion
-//#region src/index.ts
-var src_default = app;
-
-//#endregion
-export { src_default as default };
+export { server_default as default };

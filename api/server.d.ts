@@ -31,6 +31,20 @@ declare const app: Elysia<"", {
     };
   };
 } & {
+  suraji: {
+    get: {
+      body: unknown;
+      params: {};
+      query: unknown;
+      headers: unknown;
+      response: {
+        [x: string]: any;
+        [x: number]: any;
+        [x: symbol]: any;
+      };
+    };
+  };
+} & {
   api: {
     v1: {
       auth: {};
