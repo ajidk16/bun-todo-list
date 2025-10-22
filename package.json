@@ -5,7 +5,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/server.ts",
-    "postbuild": "echo '--- AFTER BUILD ---' && ls -la && echo '--- LIST api ---' && ls -la api || true",
     "build": "tsdown src/index.ts -d api --dts",
     "email": "email dev --dir src/emails",
     "db:generate": "drizzle-kit generate",
