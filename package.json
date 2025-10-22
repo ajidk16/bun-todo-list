@@ -6,7 +6,6 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/server.ts",
     "build": "bun run src/vercel-build-node-bun.ts",
-    "postinstall": "bun install memoirist",
     "email": "email dev --dir src/emails",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
