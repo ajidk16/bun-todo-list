@@ -125,7 +125,7 @@ declare const app: Elysia<"", {
   api: {
     v1: {
       profile: {
-        otp: {
+        "send-otp": {
           get: {
             body: unknown;
             params: {};

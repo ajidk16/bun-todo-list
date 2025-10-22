@@ -362,9 +362,9 @@ OTPEmail.PreviewProps = {
 //#region src/modules/profiles/index.ts
 const resend = new Resend(process.env.RESEND_API_KEY);
 const otpStore = /* @__PURE__ */ new Map();
-const profileController = new Elysia({ prefix: "/profile" }).get("/otp", async ({ query, server }) => {
+const profileController = new Elysia({ prefix: "/profile" }).get("/send-otp", async ({ query, server }) => {
 	const to = query.to;
-	const baseURL = server.url.origin;
+	server.url.origin;
 	const otp = (Math.floor(Math.random() * 9e5) + 1e5).toString();
 	const expiresAt = Date.now() + 600 * 1e3;
 	otpStore.set(to, {
@@ -373,7 +373,7 @@ const profileController = new Elysia({ prefix: "/profile" }).get("/otp", async (
 	});
 	const html = renderToStaticMarkup(React.createElement(OTPEmail, {
 		otp,
-		verifyUrl: `${baseURL}/api/v1/profile/otp/verify?email=${to}`,
+		verifyUrl: `https://bun-todo-list-murex.vercel.app/api/v1/profile/otp/verify?email=${to}`,
 		supportEmail: "surajidk12@gmail.com",
 		brandName: "Todo List",
 		expiresInMin: 10
