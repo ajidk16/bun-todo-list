@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../../db/clients";
 import { users } from "../../db/schema";
 import argon2 from "argon2";
+import bcrypt from "bcrypt";
 
 export const createUser = async (
   username: string,
@@ -70,11 +71,7 @@ export const findUserById = async (id: string) => {
 // };
 
 export const hashPassword = async (password: string) => {
-  return await argon2.hash(password, {
-    type: argon2.argon2id,
-    memoryCost: 19456, // dalam kibibytes (default 2^12 = 4096 kibibytes)
-    timeCost: 2,
-  });
+  return await bcrypt.hash(password, 12);
 };
 
 export const verifyPassword = async (
@@ -82,7 +79,7 @@ export const verifyPassword = async (
   hashedPassword: string
 ): Promise<boolean> => {
   try {
-    return await argon2.verify(hashedPassword, password);
+    return await bcrypt.compare(password, hashedPassword);
   } catch {
     return false;
   }
