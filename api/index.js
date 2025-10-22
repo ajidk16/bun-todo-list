@@ -11,6 +11,7 @@ import cors from "@elysiajs/cors";
 import { renderToStaticMarkup } from "react-dom/server";
 import * as React from "react";
 import { Button, Column, Container, Row, Section, Tailwind, Text } from "@react-email/components";
+import { jsx, jsxs } from "react/jsx-runtime";
 import { Resend } from "resend";
 
 //#region rolldown:runtime
@@ -231,21 +232,122 @@ const authGuard = { beforeHandle: [async ({ jwt: jwt$1, bearer: bearer$1, status
 //#region src/emails/otp.tsx
 function OTPEmail({ otp, username, verifyUrl, supportEmail, brandName, expiresInMin }) {
 	const digits = [...otp.toString()];
-	return /* @__PURE__ */ React.createElement(Tailwind, null, /* @__PURE__ */ React.createElement(Section, { className: "bg-slate-100 py-8" }, /* @__PURE__ */ React.createElement(Container, { className: "mx-auto w-full max-w-[560px] px-4" }, /* @__PURE__ */ React.createElement(Section, { className: "overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200" }, /* @__PURE__ */ React.createElement(Section, { className: "bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-5" }, /* @__PURE__ */ React.createElement(Row, null, /* @__PURE__ */ React.createElement(Column, null, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3 text-white" }, /* @__PURE__ */ React.createElement("div", { className: "flex h-9 w-9 items-center justify-center rounded-xl bg-white/10" }, /* @__PURE__ */ React.createElement("svg", {
-		xmlns: "http://www.w3.org/2000/svg",
-		viewBox: "0 0 24 24",
-		fill: "currentColor",
-		className: "h-5 w-5"
-	}, /* @__PURE__ */ React.createElement("path", { d: "M12 3l8.66 5v8L12 21l-8.66-5V8L12 3zm0 2.309L5.34 9 12 12.691 18.66 9 12 5.309z" }))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Text, { className: "m-0 text-[11px] uppercase tracking-wider text-white/70" }, "Keamanan Akun"), /* @__PURE__ */ React.createElement(Text, { className: "m-0 text-base font-semibold text-white" }, "Verifikasi Kode OTP")))))), /* @__PURE__ */ React.createElement(Section, { className: "px-6 py-6" }, /* @__PURE__ */ React.createElement(Text, { className: "m-0 text-slate-700" }, "Halo, ", username), /* @__PURE__ */ React.createElement(Text, { className: "mt-3 text-slate-700" }, "Kami menerima permintaan untuk memverifikasi akun Anda. Masukkan kode OTP berikut pada aplikasi atau situs kami:"), /* @__PURE__ */ React.createElement("div", { className: "mt-5 flex justify-center gap-2" }, digits.map((d, i) => /* @__PURE__ */ React.createElement("span", {
-		key: `${d}-${i}`,
-		className: "flex h-12 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-xl font-semibold tracking-widest text-slate-800"
-	}, d))), /* @__PURE__ */ React.createElement(Text, { className: "mt-4 text-sm text-slate-600" }, "Kode berlaku selama", " ", /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-slate-800" }, expiresInMin, " menit"), ". Jangan bagikan OTP kepada siapa pun."), /* @__PURE__ */ React.createElement("div", { className: "mt-6 text-center" }, /* @__PURE__ */ React.createElement(Button, {
-		href: verifyUrl,
-		className: "inline-block rounded-xl bg-indigo-600 px-5 py-3 text-center text-sm font-semibold text-white no-underline shadow"
-	}, "Verifikasi Sekarang")), /* @__PURE__ */ React.createElement("div", { className: "mt-6 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200" }, /* @__PURE__ */ React.createElement(Text, { className: "m-0 text-sm text-slate-700" }, "Tidak meminta verifikasi? Abaikan email ini. Jika Anda punya pertanyaan, hubungi", " ", /* @__PURE__ */ React.createElement("a", {
-		href: `mailto:${supportEmail}`,
-		className: "text-indigo-600 underline"
-	}, supportEmail), ".")), /* @__PURE__ */ React.createElement("div", { className: "mt-6" }, /* @__PURE__ */ React.createElement(Text, { className: "m-0 text-[12px] text-slate-500" }, "Jika tombol tidak berfungsi, salin dan tempel kode ini:"), /* @__PURE__ */ React.createElement("code", { className: "mt-1 inline-block rounded-lg bg-slate-100 px-2 py-1 text-sm font-semibold text-slate-800" }, otp))), /* @__PURE__ */ React.createElement(Section, { className: "border-t border-slate-200 bg-white px-6 py-5" }, /* @__PURE__ */ React.createElement(Text, { className: "m-0 text-[12px] text-slate-500" }, "Anda menerima email ini karena ada aktivitas masuk atau pendaftaran pada akun Anda."), /* @__PURE__ */ React.createElement(Text, { className: "m-0 mt-1 text-[12px] text-slate-500" }, "© 2025 ", brandName, ", All rights reserved."))), /* @__PURE__ */ React.createElement(Text, { className: "mt-4 text-center text-[11px] leading-5 text-slate-500" }, "Harap jangan membalas email ini. Kotak masuk ini tidak dipantau."))));
+	return /* @__PURE__ */ jsx(Tailwind, { children: /* @__PURE__ */ jsx(Section, {
+		className: "bg-slate-100 py-8",
+		children: /* @__PURE__ */ jsxs(Container, {
+			className: "mx-auto w-full max-w-[560px] px-4",
+			children: [/* @__PURE__ */ jsxs(Section, {
+				className: "overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200",
+				children: [
+					/* @__PURE__ */ jsx(Section, {
+						className: "bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-5",
+						children: /* @__PURE__ */ jsx(Row, { children: /* @__PURE__ */ jsx(Column, { children: /* @__PURE__ */ jsxs("div", {
+							className: "flex items-center gap-3 text-white",
+							children: [/* @__PURE__ */ jsx("div", {
+								className: "flex h-9 w-9 items-center justify-center rounded-xl bg-white/10",
+								children: /* @__PURE__ */ jsx("svg", {
+									xmlns: "http://www.w3.org/2000/svg",
+									viewBox: "0 0 24 24",
+									fill: "currentColor",
+									className: "h-5 w-5",
+									children: /* @__PURE__ */ jsx("path", { d: "M12 3l8.66 5v8L12 21l-8.66-5V8L12 3zm0 2.309L5.34 9 12 12.691 18.66 9 12 5.309z" })
+								})
+							}), /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx(Text, {
+								className: "m-0 text-[11px] uppercase tracking-wider text-white/70",
+								children: "Keamanan Akun"
+							}), /* @__PURE__ */ jsx(Text, {
+								className: "m-0 text-base font-semibold text-white",
+								children: "Verifikasi Kode OTP"
+							})] })]
+						}) }) })
+					}),
+					/* @__PURE__ */ jsxs(Section, {
+						className: "px-6 py-6",
+						children: [
+							/* @__PURE__ */ jsxs(Text, {
+								className: "m-0 text-slate-700",
+								children: ["Halo, ", username]
+							}),
+							/* @__PURE__ */ jsx(Text, {
+								className: "mt-3 text-slate-700",
+								children: "Kami menerima permintaan untuk memverifikasi akun Anda. Masukkan kode OTP berikut pada aplikasi atau situs kami:"
+							}),
+							/* @__PURE__ */ jsx("div", {
+								className: "mt-5 flex justify-center gap-2",
+								children: digits.map((d, i) => /* @__PURE__ */ jsx("span", {
+									className: "flex h-12 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-xl font-semibold tracking-widest text-slate-800",
+									children: d
+								}, `${d}-${i}`))
+							}),
+							/* @__PURE__ */ jsxs(Text, {
+								className: "mt-4 text-sm text-slate-600",
+								children: [
+									"Kode berlaku selama",
+									" ",
+									/* @__PURE__ */ jsxs("span", {
+										className: "font-semibold text-slate-800",
+										children: [expiresInMin, " menit"]
+									}),
+									". Jangan bagikan OTP kepada siapa pun."
+								]
+							}),
+							/* @__PURE__ */ jsx("div", {
+								className: "mt-6 text-center",
+								children: /* @__PURE__ */ jsx(Button, {
+									href: verifyUrl,
+									className: "inline-block rounded-xl bg-indigo-600 px-5 py-3 text-center text-sm font-semibold text-white no-underline shadow",
+									children: "Verifikasi Sekarang"
+								})
+							}),
+							/* @__PURE__ */ jsx("div", {
+								className: "mt-6 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200",
+								children: /* @__PURE__ */ jsxs(Text, {
+									className: "m-0 text-sm text-slate-700",
+									children: [
+										"Tidak meminta verifikasi? Abaikan email ini. Jika Anda punya pertanyaan, hubungi",
+										" ",
+										/* @__PURE__ */ jsx("a", {
+											href: `mailto:${supportEmail}`,
+											className: "text-indigo-600 underline",
+											children: supportEmail
+										}),
+										"."
+									]
+								})
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "mt-6",
+								children: [/* @__PURE__ */ jsx(Text, {
+									className: "m-0 text-[12px] text-slate-500",
+									children: "Jika tombol tidak berfungsi, salin dan tempel kode ini:"
+								}), /* @__PURE__ */ jsx("code", {
+									className: "mt-1 inline-block rounded-lg bg-slate-100 px-2 py-1 text-sm font-semibold text-slate-800",
+									children: otp
+								})]
+							})
+						]
+					}),
+					/* @__PURE__ */ jsxs(Section, {
+						className: "border-t border-slate-200 bg-white px-6 py-5",
+						children: [/* @__PURE__ */ jsx(Text, {
+							className: "m-0 text-[12px] text-slate-500",
+							children: "Anda menerima email ini karena ada aktivitas masuk atau pendaftaran pada akun Anda."
+						}), /* @__PURE__ */ jsxs(Text, {
+							className: "m-0 mt-1 text-[12px] text-slate-500",
+							children: [
+								"© 2025 ",
+								brandName,
+								", All rights reserved."
+							]
+						})]
+					})
+				]
+			}), /* @__PURE__ */ jsx(Text, {
+				className: "mt-4 text-center text-[11px] leading-5 text-slate-500",
+				children: "Harap jangan membalas email ini. Kotak masuk ini tidak dipantau."
+			})]
+		})
+	}) });
 }
 OTPEmail.PreviewProps = {
 	otp: "832374",
