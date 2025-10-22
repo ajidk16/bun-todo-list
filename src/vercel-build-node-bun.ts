@@ -7,7 +7,7 @@ const outDir = ".vercel";
 const funcDir = path.join(outDir, "functions", "index.func");
 const staticDir = path.join(outDir, "static");
 const entryJs = path.join(funcDir, "index.js");
-const entryTs = "src/server.ts";
+const entryTs = "api/index.ts";
 
 async function main() {
   console.log("🏗️  Starting custom Vercel Bun build...");
@@ -18,7 +18,9 @@ async function main() {
     console.log(`✅ Found entry file: ${entryTs}`);
   } catch {
     console.error(`❌ Entry file not found: ${entryTs}`);
-    console.log(`Cek apakah file ${entryTs} ada dan tidak diabaikan .gitignore`);
+    console.log(
+      `Cek apakah file ${entryTs} ada dan tidak diabaikan .gitignore`
+    );
     process.exit(1);
   }
 
@@ -54,12 +56,15 @@ async function main() {
   // Routing config
   const routesConfig = {
     version: 3,
-    routes: [{ handle: "filesystem" }, { src: "/(.*)", dest: "/index" }],
+    routes: [{ handle: "filesystem" }, { src: "/(.*)", dest: "/server" }],
   };
-  await fs.writeFile(
+
+  const data = await fs.writeFile(
     path.join(outDir, "config.json"),
     JSON.stringify(routesConfig, null, 2)
   );
+
+  console.log("data", data);
 
   console.log("✅ Build ready! Output available in .vercel/output");
 }
