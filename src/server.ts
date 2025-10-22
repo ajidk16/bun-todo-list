@@ -6,7 +6,7 @@ import bearer from "@elysiajs/bearer";
 import { authGuard } from "./plugin/auth-guard";
 import { profileController } from "./modules/profiles";
 
-const app = new Elysia()
+export const app = new Elysia()
   .use(cors())
   .use(bearer())
   .get("/", () => {
@@ -28,4 +28,4 @@ const app = new Elysia()
 
 // .listen(3000);
 
-export default app;
+// console.log("🚀 Server running on http://localhost:3000");
