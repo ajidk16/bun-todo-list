@@ -436,7 +436,10 @@ const app = new Elysia().use(cors()).use(bearer()).get("/", () => {
 		user: verifyToken
 	};
 }));
-var server_default = app;
 
 //#endregion
-export { server_default as default };
+//#region src/index.ts
+var src_default = app;
+
+//#endregion
+export { src_default as default };

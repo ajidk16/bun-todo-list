@@ -6,13 +6,13 @@ import bearer from "@elysiajs/bearer";
 import { authGuard } from "./plugin/auth-guard";
 import { profileController } from "./modules/profiles";
 
-const app = new Elysia()
+export const app = new Elysia()
   .use(cors())
   .use(bearer())
   .get("/", () => {
     return "selamat datang suraji";
   })
-  .get('/suraji', () => 'halo suraji!')
+  .get("/suraji", () => "halo suraji!")
   .group("/api/v1", (app) =>
     app
       .use(authController)
@@ -25,5 +25,3 @@ const app = new Elysia()
         return { message: "Authenticated", user: verifyToken };
       })
   );
-
-export default app;
