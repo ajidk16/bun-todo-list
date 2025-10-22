@@ -24,6 +24,7 @@
     "@react-email/components": "^0.5.7",
     "@react-email/tailwind": "^1.2.2",
     "@types/nodemailer": "^7.0.2",
+    "argon2": "^0.44.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.6",
     "drizzle-zod": "^0.8.3",

@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "../../db/clients";
 import { users } from "../../db/schema";
+import argon2 from "argon2";
 
 export const createUser = async (
   username: string,
@@ -52,10 +53,26 @@ export const findUserById = async (id: string) => {
   return user;
 };
 
+// export const hashPassword = async (password: string) => {
+//   return Bun.password.hash(password, {
+//     algorithm: "argon2id",
+//     memoryCost: 19456,
+//     timeCost: 2,
+//   });
+// };
+
+// export const verifyPassword = async (
+//   password: string,
+//   hashedPassword: string
+// ) => {
+//   const isValid = await Bun.password.verify(password, hashedPassword);
+//   return isValid;
+// };
+
 export const hashPassword = async (password: string) => {
-  return Bun.password.hash(password, {
-    algorithm: "argon2id",
-    memoryCost: 19456,
+  return await argon2.hash(password, {
+    type: argon2.argon2id,
+    memoryCost: 19456, // dalam kibibytes (default 2^12 = 4096 kibibytes)
     timeCost: 2,
   });
 };
@@ -63,7 +80,10 @@ export const hashPassword = async (password: string) => {
 export const verifyPassword = async (
   password: string,
   hashedPassword: string
-) => {
-  const isValid = await Bun.password.verify(password, hashedPassword);
-  return isValid;
+): Promise<boolean> => {
+  try {
+    return await argon2.verify(hashedPassword, password);
+  } catch {
+    return false;
+  }
 };
