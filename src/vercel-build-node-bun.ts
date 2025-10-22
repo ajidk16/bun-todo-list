@@ -7,7 +7,7 @@ const outDir = ".vercel";
 const funcDir = path.join(outDir, "functions", "index.func");
 const staticDir = path.join(outDir, "static");
 const entryJs = path.join(funcDir, "index.js");
-const entryTs = "api/index.ts";
+const entryTs = "api/_handler.ts";
 
 async function main() {
   console.log("🏗️  Starting custom Vercel Bun build...");
