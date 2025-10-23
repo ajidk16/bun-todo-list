@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { eq, relations, sql } from "drizzle-orm";
+import { and, eq, relations, sql } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { boolean, pgEnum, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
@@ -223,12 +223,16 @@ const authController = new Elysia({ prefix: "/auth" }).use(jwtPlugin).use(bearer
 
 //#endregion
 //#region src/plugin/auth-guard.ts
-const authGuard = { beforeHandle: [async ({ jwt: jwt$1, bearer: bearer$1, status }) => {
+const authGuard = { beforeHandle: [async ({ jwt: jwt$1, bearer: bearer$1, status, set }) => {
 	const token = await jwt$1.verify(bearer$1);
 	if (!token) return status(401, { error: "Missing or invalid token" });
 	const user = await findUserById(token.id);
 	if (!user) return status(401, { error: "User not found" });
 	if (user.verifiedEmail === false) return status(403, { error: "Email not verified" });
+	set.headers["x-user-id"] = token.id;
+	set.headers["x-user-email"] = token.email;
+	set.headers["x-user-username"] = token.username;
+	set.headers["x-user-verifiedEmail"] = token.verifiedEmail;
 }] };
 
 //#endregion
@@ -438,7 +442,7 @@ const otpController = new Elysia({ prefix: "/otp" }).get("/send", async ({ query
 
 //#endregion
 //#region src/modules/todos/service.ts
-const listTodos = async ({ page, limit, search }) => {
+const listTodos = async ({ userId, page, limit, search }) => {
 	const searchQuery = `%${search}%`;
 	return {
 		todos: await db.query.todos.findMany({
@@ -450,41 +454,38 @@ const listTodos = async ({ page, limit, search }) => {
 			} } },
 			limit,
 			offset: page,
-			where: (todo, { sql: sql$2 }) => sql$2`${todo.title} ILIKE ${searchQuery} OR ${todo.description} ILIKE ${searchQuery}`
+			where: (todo, { sql: sql$2 }) => and(eq(todo.userId, String(userId)), sql$2`(${todo.title} ILIKE ${searchQuery} OR ${todo.description} ILIKE ${searchQuery})`)
 		}),
-		total: (await db.select({ count: sql`count(*)`.mapWith(Number) }).from(todos))[0]?.count || 0
+		total: (await db.select({ count: sql`count(*)`.mapWith(Number) }).from(todos).where(eq(todos.userId, String(userId))))[0]?.count || 0
 	};
 };
-const getTodoById = async (id) => {
-	return await db.query.todos.findFirst({ where: eq(todos.id, id) });
+const getTodoById = async (userId, id) => {
+	return await db.query.todos.findFirst({ where: and(eq(todos.id, id), eq(todos.userId, String(userId))) });
 };
 const createTodo = async ({ title, description, userId, isCompleted, status, priority }) => {
+	if (typeof userId !== "string") throw new Error("userId is required and must be a string");
 	const [insert] = await db.insert(todos).values({
-		userId,
+		userId: String(userId),
 		title,
 		description,
 		isCompleted,
 		status,
 		priority
 	}).returning();
-	console.log("Inserted todo:", insert);
 	return insert;
 };
 const updateTodo = async (id, data) => {
 	const [update] = await db.update(todos).set(data).where(eq(todos.id, id)).returning();
-	console.log("Updated todo:", update);
 	return update;
 };
-const deleteTodo = async (id) => {
-	const del = await db.delete(todos).where(eq(todos.id, id));
-	console.log("Deleted todo with id:", id);
-	return del;
+const deleteTodo = async (userId, id) => {
+	return await db.delete(todos).where(and(eq(todos.id, id), eq(todos.userId, String(userId))));
 };
 
 //#endregion
 //#region src/modules/todos/model.ts
 const newTodo = z.object({
-	userId: z.string(),
+	userId: z.string().optional(),
 	title: z.string().min(1).max(255),
 	description: z.string().optional(),
 	isCompleted: z.coerce.boolean().optional(),
@@ -504,15 +505,18 @@ const newTodo = z.object({
 const filterTodos = z.object({
 	page: z.coerce.number().optional().default(1),
 	limit: z.coerce.number().optional().default(10),
-	search: z.string().optional().default("")
+	search: z.string().optional().default(""),
+	userId: z.string().optional()
 });
 
 //#endregion
 //#region src/modules/todos/index.ts
-const todoController = new Elysia({ prefix: "/todos" }).get("/", async ({ query: { page, limit, search }, status }) => {
+const todoController = new Elysia({ prefix: "/todos" }).get("/", async ({ query: { page, limit, search }, status, set }) => {
 	const offset = (page - 1) * limit;
+	const searchTerm = search.toLowerCase() ?? "";
 	const { todos: todos$1, total } = await listTodos({
-		search: search.toLowerCase() ?? "",
+		userId: String(set.headers["x-user-id"]),
+		search: searchTerm,
 		page: offset,
 		limit
 	});
@@ -526,20 +530,20 @@ const todoController = new Elysia({ prefix: "/todos" }).get("/", async ({ query:
 			totalPages: Math.ceil(total / limit)
 		}
 	});
-}, { query: filterTodos }).get("/:id", async ({ params, status }) => {
-	const todo = await getTodoById(params.id);
+}, { query: filterTodos }).get("/:id", async ({ params, status, set }) => {
+	const todo = await getTodoById(String(set.headers["x-user-id"]), params.id);
 	return status(200, {
 		message: `Get todo with id ${params.id}`,
 		data: todo
 	});
-}).post("/", async ({ body, status }) => {
-	const { userId, title, description, isCompleted, status: isStatus, priority } = body;
+}).post("/", async ({ body, status, set }) => {
+	const { title, description, isCompleted, status: isStatus, priority } = body;
 	return status(201, {
 		message: "Todo created",
 		data: await createTodo({
 			title,
 			description,
-			userId,
+			userId: String(set.headers["x-user-id"]),
 			isCompleted,
 			status: isStatus,
 			priority
@@ -561,8 +565,8 @@ const todoController = new Elysia({ prefix: "/todos" }).get("/", async ({ query:
 }, {
 	params: z$1.object({ id: z$1.string() }),
 	body: newTodo.partial()
-}).delete("/:id", async ({ params: { id }, status }) => {
-	const todo = await deleteTodo(id);
+}).delete("/:id", async ({ params: { id }, status, set }) => {
+	const todo = await deleteTodo(String(set.headers["x-user-id"]), id);
 	return status(200), {
 		message: "Todo deleted",
 		data: todo

@@ -1,9 +1,14 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/clients";
 import { todos } from "../../db/schema";
 import { filterTodos, newTodo } from "./model";
 
-export const listTodos = async ({ page, limit, search }: filterTodos) => {
+export const listTodos = async ({
+  userId,
+  page,
+  limit,
+  search,
+}: filterTodos) => {
   const searchQuery = `%${search}%`;
 
   const payload = await db.query.todos.findMany({
@@ -20,21 +25,25 @@ export const listTodos = async ({ page, limit, search }: filterTodos) => {
     limit,
     offset: page,
     where: (todo, { sql }) =>
-      sql`${todo.title} ILIKE ${searchQuery} OR ${todo.description} ILIKE ${searchQuery}`,
+      and(
+        eq(todo.userId, String(userId)),
+        sql`(${todo.title} ILIKE ${searchQuery} OR ${todo.description} ILIKE ${searchQuery})`
+      ),
   });
 
   const totalResult = await db
     .select({ count: sql`count(*)`.mapWith(Number) })
-    .from(todos);
+    .from(todos)
+    .where(eq(todos.userId, String(userId)));
 
   const total = totalResult[0]?.count || 0;
 
   return { todos: payload, total };
 };
 
-export const getTodoById = async (id: string) => {
+export const getTodoById = async (userId: string, id: string) => {
   const todo = await db.query.todos.findFirst({
-    where: eq(todos.id, id),
+    where: and(eq(todos.id, id), eq(todos.userId, String(userId))),
   });
 
   return todo;
@@ -48,10 +57,13 @@ export const createTodo = async ({
   status,
   priority,
 }: newTodo) => {
+  if (typeof userId !== "string") {
+    throw new Error("userId is required and must be a string");
+  }
   const [insert] = await db
     .insert(todos)
     .values({
-      userId,
+      userId: String(userId),
       title,
       description,
       isCompleted,
@@ -59,7 +71,6 @@ export const createTodo = async ({
       priority,
     })
     .returning();
-  console.log("Inserted todo:", insert);
 
   return insert;
 };
@@ -70,14 +81,14 @@ export const updateTodo = async (id: string, data: Partial<newTodo>) => {
     .set(data)
     .where(eq(todos.id, id))
     .returning();
-  console.log("Updated todo:", update);
 
   return update;
 };
 
-export const deleteTodo = async (id: string) => {
-  const del = await db.delete(todos).where(eq(todos.id, id));
-  console.log("Deleted todo with id:", id);
+export const deleteTodo = async (userId: string, id: string) => {
+  const del = await db
+    .delete(todos)
+    .where(and(eq(todos.id, id), eq(todos.userId, String(userId))));
 
   return del;
 };

@@ -203,6 +203,7 @@ declare const app: Elysia<"", {
             page: number;
             limit: number;
             search: string;
+            userId?: string | undefined;
           };
           headers: unknown;
           response: {
@@ -286,8 +287,8 @@ declare const app: Elysia<"", {
       todos: {
         post: {
           body: {
-            userId: string;
             title: string;
+            userId?: string | undefined;
             description?: string | undefined;
             isCompleted?: boolean | undefined;
             status?: "pending" | "in_progress" | "completed" | "archived" | undefined;

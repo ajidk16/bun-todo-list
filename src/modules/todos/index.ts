@@ -10,13 +10,15 @@ import { filterTodos, newTodo } from "./model";
 import z from "zod";
 
 export const todoController = new Elysia({ prefix: "/todos" })
+
   .get(
     "/",
-    async ({ query: { page, limit, search }, status }) => {
+    async ({ query: { page, limit, search }, status, set }) => {
       const offset = (page - 1) * limit;
       const searchTerm = search.toLowerCase() ?? "";
 
       const { todos, total } = await listTodos({
+        userId: String(set.headers["x-user-id"]),
         search: searchTerm,
         page: offset,
         limit,
@@ -37,8 +39,8 @@ export const todoController = new Elysia({ prefix: "/todos" })
       query: filterTodos,
     }
   )
-  .get("/:id", async ({ params, status }) => {
-    const todo = await getTodoById(params.id);
+  .get("/:id", async ({ params, status, set }) => {
+    const todo = await getTodoById(String(set.headers["x-user-id"]), params.id);
     return status(200, {
       message: `Get todo with id ${params.id}`,
       data: todo,
@@ -46,9 +48,8 @@ export const todoController = new Elysia({ prefix: "/todos" })
   })
   .post(
     "/",
-    async ({ body, status }) => {
+    async ({ body, status, set }) => {
       const {
-        userId,
         title,
         description,
         isCompleted,
@@ -59,7 +60,7 @@ export const todoController = new Elysia({ prefix: "/todos" })
       const todo = await createTodo({
         title,
         description,
-        userId,
+        userId: String(set.headers["x-user-id"]),
         isCompleted,
         status: isStatus,
         priority,
@@ -99,7 +100,7 @@ export const todoController = new Elysia({ prefix: "/todos" })
       body: newTodo.partial(),
     }
   )
-  .delete("/:id", async ({ params: { id }, status }) => {
-    const todo = await deleteTodo(id);
+  .delete("/:id", async ({ params: { id }, status, set }) => {
+    const todo = await deleteTodo(String(set.headers["x-user-id"]), id);
     return (status(200), { message: "Todo deleted", data: todo });
   });
