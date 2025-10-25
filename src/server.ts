@@ -8,6 +8,14 @@ import { otpController } from "./modules/otp";
 import { todoController } from "./modules/todos";
 
 export const app = new Elysia()
+  .use(
+    cors({
+      origin: "http://localhost:5173",
+      allowedHeaders: ["Content-Type", "Authorization"],
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      credentials: true,
+    })
+  )
   .onError(({ code, error, set }) => {
     switch (code) {
       case "VALIDATION":
@@ -24,8 +32,6 @@ export const app = new Elysia()
         return { error: "Internal server error", message: error };
     }
   })
-  .use(cors())
-  .use(bearer())
   .get("/", () => {
     return { message: "selamat datang suraji" };
   })
@@ -36,11 +42,11 @@ export const app = new Elysia()
       .use(otpController)
       .guard(authGuard)
       .use(todoController)
-      .get("/me", async ({ jwt, status, bearer }) => {
+      .get("/me", async ({ jwt, status, bearer, cookie }) => {
         const verifyToken = await jwt.verify(bearer);
         if (!verifyToken) return (status(401), { error: "Unauthorized" });
 
-        return { message: "Authenticated", user: verifyToken };
+        return { message: "Authenticated", user: verifyToken, cookie };
       })
   );
 

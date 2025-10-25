@@ -2,17 +2,49 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/clients";
 import { todos } from "../../db/schema";
 import { filterTodos, newTodo } from "./model";
+import {
+  startOfDay,
+  endOfDay,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+} from "date-fns";
 
 export const listTodos = async ({
   userId,
   page,
   limit,
   search,
+  dateFilter,
 }: filterTodos) => {
   const searchQuery = `%${search}%`;
+  let dateCondition = undefined;
+
+  if (dateFilter === "day") {
+    dateCondition = and(
+      sql`${todos.createdAt} >= ${startOfDay(new Date())}`,
+      sql`${todos.createdAt} <= ${endOfDay(new Date())}`
+    );
+  } else if (dateFilter === "week") {
+    dateCondition = and(
+      sql`${todos.createdAt} >= ${startOfWeek(new Date())}`,
+      sql`${todos.createdAt} <= ${endOfWeek(new Date())}`
+    );
+  } else if (dateFilter === "month") {
+    dateCondition = and(
+      sql`${todos.createdAt} >= ${startOfMonth(new Date())}`,
+      sql`${todos.createdAt} <= ${endOfMonth(new Date())}`
+    );
+  }
 
   const payload = await db.query.todos.findMany({
     with: {
+      todosTags: {
+        with: {
+          tag: true,
+        },
+      },
       user: {
         columns: {
           id: true,
@@ -24,17 +56,31 @@ export const listTodos = async ({
     },
     limit,
     offset: page,
-    where: (todo, { sql }) =>
-      and(
+    where: (todo, { sql }) => {
+      const baseCondition = and(
         eq(todo.userId, String(userId)),
         sql`(${todo.title} ILIKE ${searchQuery} OR ${todo.description} ILIKE ${searchQuery})`
-      ),
+      );
+      if (dateCondition) {
+        return and(baseCondition, dateCondition);
+      }
+      return baseCondition;
+    },
   });
 
   const totalResult = await db
     .select({ count: sql`count(*)`.mapWith(Number) })
     .from(todos)
-    .where(eq(todos.userId, String(userId)));
+    .where(() => {
+      const baseCondition = and(
+        eq(todos.userId, String(userId)),
+        sql`(${todos.title} ILIKE ${searchQuery} OR ${todos.description} ILIKE ${searchQuery})`
+      );
+      if (dateCondition) {
+        return and(baseCondition, dateCondition);
+      }
+      return baseCondition;
+    });
 
   const total = totalResult[0]?.count || 0;
 

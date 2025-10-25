@@ -7,7 +7,9 @@ import {
   timestamp,
   pgEnum,
   varchar,
+  primaryKey,
 } from "drizzle-orm/pg-core";
+import { t } from "elysia";
 
 // ENUM untuk status dan prioritas
 export const todoStatus = pgEnum("todo_status", [
@@ -50,13 +52,62 @@ export const todos = pgTable("todos", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const todosRelations = relations(todos, ({ one }) => ({
+// Tabel tags (setiap user punya tags sendiri)
+export const tags = pgTable("tags", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 50 }).notNull(),
+  color: varchar("color", { length: 7 }).default("#3b82f6"), // hex color
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Tabel junction untuk relasi many-to-many todos <-> tags
+export const todosTags = pgTable(
+  "todos_tags",
+  {
+    todoId: uuid("todo_id")
+      .notNull()
+      .references(() => todos.id, { onDelete: "cascade" }),
+    tagId: uuid("tag_id")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.todoId, table.tagId] }),
+  })
+);
+
+export const todosRelations = relations(todos, ({ one, many }) => ({
   user: one(users, {
     fields: [todos.userId],
     references: [users.id],
   }),
+  todosTags: many(todosTags),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
   todos: many(todos),
+  tags: many(tags),
+}));
+
+export const tagsRelations = relations(tags, ({ one, many }) => ({
+  user: one(users, {
+    fields: [tags.userId],
+    references: [users.id],
+  }),
+  todosTags: many(todosTags),
+}));
+
+export const todosTagsRelations = relations(todosTags, ({ one }) => ({
+  todo: one(todos, {
+    fields: [todosTags.todoId],
+    references: [todos.id],
+  }),
+  tag: one(tags, {
+    fields: [todosTags.tagId],
+    references: [tags.id],
+  }),
 }));

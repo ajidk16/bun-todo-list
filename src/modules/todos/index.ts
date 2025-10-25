@@ -13,13 +13,14 @@ export const todoController = new Elysia({ prefix: "/todos" })
 
   .get(
     "/",
-    async ({ query: { page, limit, search }, status, set }) => {
+    async ({ query: { page, limit, search, dateFilter }, status, set }) => {
       const offset = (page - 1) * limit;
       const searchTerm = search.toLowerCase() ?? "";
 
       const { todos, total } = await listTodos({
         userId: String(set.headers["x-user-id"]),
         search: searchTerm,
+        dateFilter,
         page: offset,
         limit,
       });

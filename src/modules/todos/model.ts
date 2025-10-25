@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { date, z } from "zod";
 
 export const newTodo = z.object({
   userId: z.string().optional(),
@@ -18,5 +18,6 @@ export const filterTodos = z.object({
   limit: z.coerce.number().optional().default(10),
   search: z.string().optional().default(""),
   userId: z.string().optional(),
+  dateFilter: z.enum(["", "day", "week", "month"]).optional(),
 });
 export type filterTodos = z.infer<typeof filterTodos>;
