@@ -15,7 +15,7 @@ export async function sendOTP(to: string, baseURL: string) {
   const html = renderToStaticMarkup(
     React.createElement(OTPEmail, {
       otp,
-      verifyUrl: `${baseURL}/api/v1/otp/verify?to=${to}&otp=${otp}`,
+      verifyUrl: `${process.env.FRONTEND_URL}/todo?to=${to}&otp=${otp}`,
       supportEmail: "surajidk12@gmail.com",
       brandName: "Todo List",
       expiresInMin: 10,
@@ -32,15 +32,15 @@ export async function sendOTP(to: string, baseURL: string) {
   return { success: true, message: "OTP sent" };
 }
 
-export async function verifyOTPHandler(to: string, otpInput?: string) {
-  const record = otpStore.get(to);
+export async function verifyOTPHandler(to?: string, otpInput?: string) {
+  const record = otpStore.get(to ?? "");
   if (!record) {
     return { success: false, error: "OTP not found or expired" };
   }
 
   const isExpired = Date.now() > record.expiresAt;
   if (isExpired) {
-    otpStore.delete(to);
+    otpStore.delete(to ?? "");
     return { success: false, error: "OTP expired" };
   }
 
@@ -48,11 +48,11 @@ export async function verifyOTPHandler(to: string, otpInput?: string) {
     return { success: false, error: "Invalid OTP" };
   }
 
-  const user = await verifyEmail(to);
+  const user = await verifyEmail(to ?? "");
   if (!user) {
     return { success: false, error: "Email not registered" };
   }
 
-  otpStore.delete(to);
+  otpStore.delete(to ?? "");
   return { success: true, message: "OTP verified" };
 }

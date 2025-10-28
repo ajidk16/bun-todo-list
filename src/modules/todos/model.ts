@@ -9,6 +9,7 @@ export const newTodo = z.object({
     .enum(["pending", "in_progress", "completed", "archived"])
     .optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+  tags: z.string().optional(),
 });
 
 export type newTodo = z.infer<typeof newTodo>;

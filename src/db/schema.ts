@@ -9,7 +9,6 @@ import {
   varchar,
   primaryKey,
 } from "drizzle-orm/pg-core";
-import { t } from "elysia";
 
 // ENUM untuk status dan prioritas
 export const todoStatus = pgEnum("todo_status", [

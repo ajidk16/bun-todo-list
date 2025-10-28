@@ -14,6 +14,7 @@ export const app = new Elysia()
       allowedHeaders: ["Content-Type", "Authorization"],
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       credentials: true,
+      preflight: true, // Ensure OPTIONS requests are handled
     })
   )
   .onError(({ code, error, set }) => {
@@ -39,6 +40,17 @@ export const app = new Elysia()
   .group("/api/v1", (app) =>
     app
       .use(authController)
+      .onBeforeHandle(async ({ jwt, bearer, set, status, cookie }) => {
+        const isToken = cookie.auth?.value || bearer;
+
+        const token = await jwt.verify(String(isToken));
+        if (!token) return (status(401), { error: "Unauthorized" });
+
+        set.headers["x-user-id"] = String(token.id);
+        set.headers["x-user-email"] = String(token.email);
+        set.headers["x-user-username"] = String(token.username);
+        set.headers["x-user-verifiedEmail"] = String(token.verifiedEmail);
+      })
       .use(otpController)
       .guard(authGuard)
       .use(todoController)

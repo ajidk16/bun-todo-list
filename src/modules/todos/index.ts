@@ -8,9 +8,12 @@ import {
 } from "./service";
 import { filterTodos, newTodo } from "./model";
 import z from "zod";
+import { jwtPlugin } from "../../plugin/jwt";
+import bearer from "@elysiajs/bearer";
 
 export const todoController = new Elysia({ prefix: "/todos" })
-
+  .use(jwtPlugin)
+  .use(bearer())
   .get(
     "/",
     async ({ query: { page, limit, search, dateFilter }, status, set }) => {
@@ -49,14 +52,19 @@ export const todoController = new Elysia({ prefix: "/todos" })
   })
   .post(
     "/",
-    async ({ body, status, set }) => {
-      const {
+    async ({
+      body: {
         title,
         description,
         isCompleted,
         status: isStatus,
         priority,
-      } = body;
+        tags,
+      },
+      status,
+      set,
+    }) => {
+      // Convert tags array to comma-separated string if it's an array
 
       const todo = await createTodo({
         title,
@@ -65,6 +73,7 @@ export const todoController = new Elysia({ prefix: "/todos" })
         isCompleted,
         status: isStatus,
         priority,
+        tags,
       });
       return status(201, { message: "Todo created", data: todo });
     },
@@ -82,6 +91,7 @@ export const todoController = new Elysia({ prefix: "/todos" })
         isCompleted,
         status: isStatus,
         priority,
+        tags,
       } = body;
 
       const updatedTodo = await updateTodo(id, {
@@ -90,6 +100,7 @@ export const todoController = new Elysia({ prefix: "/todos" })
         isCompleted,
         status: isStatus,
         priority,
+        tags,
       });
 
       return status(200, { message: "Todo updated", data: updatedTodo });
