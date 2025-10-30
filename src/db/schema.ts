@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
   pgTable,
+  integer,
   uuid,
   text,
   boolean,
@@ -42,13 +43,24 @@ export const todos = pgTable("todos", {
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  statusId: uuid("status_id").references(() => statuses.id, {
+    onDelete: "set null",
+  }),
   title: text("title").notNull(),
   description: text("description"),
   isCompleted: boolean("is_completed").default(false),
-  status: todoStatus("status").default("pending"),
+  // status: todoStatus("status").default("pending"),
   priority: todoPriority("priority").default("medium"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const statuses = pgTable("statuses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 50 }).notNull().unique(),
+  label: varchar("label", { length: 100 }).notNull(),
+  color: varchar("color", { length: 7 }).default("#3b82f6"),
+  sortOrder: integer("sort_order").default(0),
 });
 
 // Tabel tags (setiap user punya tags sendiri)
@@ -84,7 +96,15 @@ export const todosRelations = relations(todos, ({ one, many }) => ({
     fields: [todos.userId],
     references: [users.id],
   }),
+  status: one(statuses, {
+    fields: [todos.statusId],
+    references: [statuses.id],
+  }),
   todosTags: many(todosTags),
+}));
+
+export const statusesRelations = relations(statuses, ({ many }) => ({
+  todos: many(todos),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({

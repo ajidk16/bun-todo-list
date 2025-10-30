@@ -1,6 +1,5 @@
 import * as elysia0 from "elysia";
 import { Elysia } from "elysia";
-import * as drizzle_orm_neon_http0 from "drizzle-orm/neon-http";
 import * as _sinclair_typebox_errors0 from "@sinclair/typebox/errors";
 import * as elysia_error0 from "elysia/error";
 
@@ -8,9 +7,7 @@ import * as elysia_error0 from "elysia/error";
 declare const app: Elysia<"", {
   decorator: {};
   store: {};
-  derive: {
-    readonly bearer: string | undefined;
-  };
+  derive: {};
   resolve: {};
 }, {
   typebox: {};
@@ -21,7 +18,7 @@ declare const app: Elysia<"", {
   macro: {};
   macroFn: {};
   parser: {};
-  response: any;
+  response: {};
 }, {
   get: {
     body: unknown;
@@ -29,9 +26,33 @@ declare const app: Elysia<"", {
     query: unknown;
     headers: unknown;
     response: {
-      [x: string]: any;
-      [x: number]: any;
-      [x: symbol]: any;
+      200: {
+        error: string;
+        details: ({
+          summary: undefined;
+        } | {
+          summary: string;
+        } | {
+          summary: string;
+          type: _sinclair_typebox_errors0.ValueErrorType;
+          schema: elysia0.TSchema;
+          path: string;
+          value: unknown;
+          message: string;
+          errors: _sinclair_typebox_errors0.ValueErrorIterator[];
+        })[];
+        message?: undefined;
+      } | {
+        error: string;
+        details?: undefined;
+        message?: undefined;
+      } | {
+        error: string;
+        message: Readonly<Error> | Readonly<elysia0.ParseError> | Readonly<elysia0.InternalServerError> | Readonly<elysia0.InvalidCookieSignature> | Readonly<elysia_error0.InvalidFileType> | Readonly<elysia0.ElysiaCustomStatusResponse<number, number, number>>;
+        details?: undefined;
+      } | {
+        message: string;
+      };
     };
   };
 } & {
@@ -42,9 +63,33 @@ declare const app: Elysia<"", {
       query: unknown;
       headers: unknown;
       response: {
-        [x: string]: any;
-        [x: number]: any;
-        [x: symbol]: any;
+        200: {
+          error: string;
+          details: ({
+            summary: undefined;
+          } | {
+            summary: string;
+          } | {
+            summary: string;
+            type: _sinclair_typebox_errors0.ValueErrorType;
+            schema: elysia0.TSchema;
+            path: string;
+            value: unknown;
+            message: string;
+            errors: _sinclair_typebox_errors0.ValueErrorIterator[];
+          })[];
+          message?: undefined;
+        } | {
+          error: string;
+          details?: undefined;
+          message?: undefined;
+        } | {
+          error: string;
+          message: Readonly<Error> | Readonly<elysia0.ParseError> | Readonly<elysia0.InternalServerError> | Readonly<elysia0.InvalidCookieSignature> | Readonly<elysia_error0.InvalidFileType> | Readonly<elysia0.ElysiaCustomStatusResponse<number, number, number>>;
+          details?: undefined;
+        } | {
+          message: string;
+        };
       };
     };
   };
@@ -135,7 +180,6 @@ declare const app: Elysia<"", {
             params: {};
             query: {
               otp?: string | undefined;
-              to: string;
             };
             headers: unknown;
             response: {
@@ -164,7 +208,6 @@ declare const app: Elysia<"", {
             params: {};
             query: {
               otp?: string | undefined;
-              to: string;
             };
             headers: unknown;
             response: {
@@ -195,6 +238,8 @@ declare const app: Elysia<"", {
 } & {
   api: {
     v1: {
+      todos: {};
+    } & {
       todos: {
         get: {
           body: unknown;
@@ -204,44 +249,13 @@ declare const app: Elysia<"", {
             limit: number;
             search: string;
             userId?: string | undefined;
+            dateFilter?: "" | "day" | "week" | "month" | undefined;
           };
           headers: unknown;
           response: {
-            200: {
-              readonly message: "List of todos";
-              readonly data: {
-                status: "pending" | "in_progress" | "completed" | "archived" | null;
-                id: string;
-                createdAt: Date;
-                updatedAt: Date;
-                userId: string;
-                title: string;
-                description: string | null;
-                isCompleted: boolean | null;
-                priority: "low" | "medium" | "high" | "urgent" | null;
-                user: {
-                  username: string;
-                  id: string;
-                  email: string;
-                  verifiedEmail: boolean;
-                };
-              }[];
-              readonly pagination: {
-                readonly page: number;
-                readonly limit: number;
-                readonly total: number;
-                readonly totalPages: number;
-              };
-            };
-            422: {
-              type: "validation";
-              on: string;
-              summary?: string;
-              message?: string;
-              found?: unknown;
-              property?: string;
-              expected?: string;
-            };
+            [x: string]: any;
+            [x: number]: any;
+            [x: symbol]: any;
           };
         };
       };
@@ -256,29 +270,9 @@ declare const app: Elysia<"", {
             query: unknown;
             headers: unknown;
             response: {
-              200: {
-                readonly message: `Get todo with id ${string}`;
-                readonly data: {
-                  status: "pending" | "in_progress" | "completed" | "archived" | null;
-                  id: string;
-                  createdAt: Date;
-                  updatedAt: Date;
-                  userId: string;
-                  title: string;
-                  description: string | null;
-                  isCompleted: boolean | null;
-                  priority: "low" | "medium" | "high" | "urgent" | null;
-                } | undefined;
-              };
-              422: {
-                type: "validation";
-                on: string;
-                summary?: string;
-                message?: string;
-                found?: unknown;
-                property?: string;
-                expected?: string;
-              };
+              [x: string]: any;
+              [x: number]: any;
+              [x: symbol]: any;
             };
           };
         };
@@ -291,36 +285,17 @@ declare const app: Elysia<"", {
             userId?: string | undefined;
             description?: string | undefined;
             isCompleted?: boolean | undefined;
-            status?: "pending" | "in_progress" | "completed" | "archived" | undefined;
+            status?: string | undefined;
             priority?: "low" | "medium" | "high" | "urgent" | undefined;
+            tags?: string | undefined;
           };
           params: {};
           query: unknown;
           headers: unknown;
           response: {
-            201: {
-              readonly message: "Todo created";
-              readonly data: {
-                status: "pending" | "in_progress" | "completed" | "archived" | null;
-                id: string;
-                createdAt: Date;
-                updatedAt: Date;
-                userId: string;
-                title: string;
-                description: string | null;
-                isCompleted: boolean | null;
-                priority: "low" | "medium" | "high" | "urgent" | null;
-              };
-            };
-            422: {
-              type: "validation";
-              on: string;
-              summary?: string;
-              message?: string;
-              found?: unknown;
-              property?: string;
-              expected?: string;
-            };
+            [x: string]: any;
+            [x: number]: any;
+            [x: symbol]: any;
           };
         };
       };
@@ -333,8 +308,9 @@ declare const app: Elysia<"", {
               title?: string | undefined;
               description?: string | undefined;
               isCompleted?: boolean | undefined;
-              status?: "pending" | "in_progress" | "completed" | "archived" | undefined;
+              status?: string | undefined;
               priority?: "low" | "medium" | "high" | "urgent" | undefined;
+              tags?: string | undefined;
             };
             params: {
               id: string;
@@ -342,29 +318,9 @@ declare const app: Elysia<"", {
             query: unknown;
             headers: unknown;
             response: {
-              200: {
-                readonly message: "Todo updated";
-                readonly data: {
-                  id: string;
-                  userId: string;
-                  title: string;
-                  description: string | null;
-                  isCompleted: boolean | null;
-                  status: "pending" | "in_progress" | "completed" | "archived" | null;
-                  priority: "low" | "medium" | "high" | "urgent" | null;
-                  createdAt: Date;
-                  updatedAt: Date;
-                };
-              };
-              422: {
-                type: "validation";
-                on: string;
-                summary?: string;
-                message?: string;
-                found?: unknown;
-                property?: string;
-                expected?: string;
-              };
+              [x: string]: any;
+              [x: number]: any;
+              [x: symbol]: any;
             };
           };
         };
@@ -380,19 +336,166 @@ declare const app: Elysia<"", {
             query: unknown;
             headers: unknown;
             response: {
-              200: {
-                message: string;
-                data: drizzle_orm_neon_http0.NeonHttpQueryResult<never>;
+              [x: string]: any;
+              [x: number]: any;
+              [x: symbol]: any;
+            };
+          };
+        };
+      };
+    };
+  };
+} & {
+  api: {
+    v1: {
+      tags: {
+        get: {
+          body: unknown;
+          params: {};
+          query: {
+            page: number;
+            limit: number;
+            search: string;
+          };
+          headers: unknown;
+          response: {
+            200: {
+              status: number;
+              data: {
+                name: string;
+                id: string;
+                createdAt: Date;
+                userId: string;
+                color: string | null;
+                todosTags: {
+                  createdAt: Date;
+                  todoId: string;
+                  tagId: string;
+                  todo: {
+                    id: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    title: string;
+                    description: string | null;
+                    isCompleted: boolean | null;
+                  };
+                }[];
+              }[];
+              pagination: {
+                page: number;
+                limit: number;
+                total: number;
+                totalPages: number;
               };
-              422: {
-                type: "validation";
-                on: string;
-                summary?: string;
-                message?: string;
-                found?: unknown;
-                property?: string;
-                expected?: string;
+            };
+            422: {
+              type: "validation";
+              on: string;
+              summary?: string;
+              message?: string;
+              found?: unknown;
+              property?: string;
+              expected?: string;
+            };
+          };
+        };
+      };
+    };
+  };
+} & {
+  api: {
+    v1: {
+      "todo-status": {
+        get: {
+          body: unknown;
+          params: {};
+          query: {
+            page: number;
+            limit: number;
+            search: string;
+          };
+          headers: unknown;
+          response: {
+            200: {
+              status: number;
+              data: {
+                name: string;
+                id: string;
+                label: string;
+                color: string | null;
+                sortOrder: number | null;
+                todos: {
+                  id: string;
+                  title: string;
+                  description: string | null;
+                  isCompleted: boolean | null;
+                  priority: "low" | "medium" | "high" | "urgent" | null;
+                  todosTags: {
+                    tag: {
+                      name: string;
+                      id: string;
+                      color: string | null;
+                    };
+                  }[];
+                  user: {
+                    username: string;
+                    id: string;
+                    email: string;
+                  };
+                }[];
+              }[];
+              pagination: {
+                page: number;
+                limit: number;
+                total: number;
+                totalPages: number;
               };
+            };
+            422: {
+              type: "validation";
+              on: string;
+              summary?: string;
+              message?: string;
+              found?: unknown;
+              property?: string;
+              expected?: string;
+            };
+          };
+        };
+      };
+    } & {
+      "todo-status": {
+        post: {
+          body: {
+            name: string;
+            label: string;
+            color: string;
+          };
+          params: {};
+          query: unknown;
+          headers: unknown;
+          response: {
+            201: {
+              readonly message: "Todo status created";
+              readonly data: {
+                name: string;
+                id: string;
+                label: string;
+                color: string | null;
+                sortOrder: number | null;
+              }[];
+            };
+            400: {
+              readonly message: "Failed to create todo status";
+            };
+            422: {
+              type: "validation";
+              on: string;
+              summary?: string;
+              message?: string;
+              found?: unknown;
+              property?: string;
+              expected?: string;
             };
           };
         };

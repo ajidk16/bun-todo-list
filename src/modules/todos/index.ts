@@ -23,9 +23,9 @@ export const todoController = new Elysia({ prefix: "/todos" })
       const { todos, total } = await listTodos({
         userId: String(set.headers["x-user-id"]),
         search: searchTerm,
-        dateFilter,
         page: offset,
         limit,
+        dateFilter,
       });
 
       return status(200, {

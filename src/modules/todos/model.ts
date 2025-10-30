@@ -1,3 +1,4 @@
+import { t } from "elysia";
 import { date, z } from "zod";
 
 export const newTodo = z.object({
@@ -5,9 +6,7 @@ export const newTodo = z.object({
   title: z.string().min(1).max(255),
   description: z.string().optional(),
   isCompleted: z.coerce.boolean().optional(),
-  status: z
-    .enum(["pending", "in_progress", "completed", "archived"])
-    .optional(),
+  status: z.string().optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
   tags: z.string().optional(),
 });

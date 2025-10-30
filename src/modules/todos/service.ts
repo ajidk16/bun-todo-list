@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, sql, inArray } from "drizzle-orm";
 import { db } from "../../db/clients";
 import dayjs from "dayjs";
 import { tags, todos, todosTags } from "../../db/schema";
@@ -8,76 +8,97 @@ const now = dayjs();
 
 export const listTodos = async ({
   userId,
-  page,
-  limit,
-  search,
+  page = 0,
+  limit = 10,
+  search = "",
   dateFilter,
 }: filterTodos) => {
   const searchQuery = `%${search}%`;
-  let dateCondition = undefined;
+  let dateCondition;
 
-  if (dateFilter === "day") {
+  // Function to get date range based on dateFilter
+  const getDateRange = () => {
+    switch (dateFilter) {
+      case "day":
+        return {
+          from: now.startOf("day").toISOString(),
+          to: now.endOf("day").toISOString(),
+        };
+      case "week":
+        return {
+          from: now.startOf("week").toISOString(),
+          to: now.endOf("week").toISOString(),
+        };
+      case "month":
+        return {
+          from: now.startOf("month").toISOString(),
+          to: now.endOf("month").toISOString(),
+        };
+      default:
+        return null;
+    }
+  };
+
+  // Build date condition if dateFilter is provided
+  const dateRange = getDateRange();
+  if (dateRange) {
     dateCondition = and(
-      sql`${todos.createdAt} >= ${now.startOf("day").toDate()}`,
-      sql`${todos.createdAt} <= ${now.endOf("day").toDate()}`
-    );
-  } else if (dateFilter === "week") {
-    dateCondition = and(
-      sql`${todos.createdAt} >= ${now.startOf("week").toDate()}`,
-      sql`${todos.createdAt} <= ${now.endOf("week").toDate()}`
-    );
-  } else if (dateFilter === "month") {
-    dateCondition = and(
-      sql`${todos.createdAt} >= ${now.startOf("month").toDate()}`,
-      sql`${todos.createdAt} <= ${now.endOf("month").toDate()}`
+      sql`${todos.createdAt} >= ${dateRange.from}`,
+      sql`${todos.createdAt} <= ${dateRange.to}`
     );
   }
 
-  const payload = await db.query.todos.findMany({
-    with: {
-      todosTags: {
-        with: {
-          tag: true,
+  // Combine base condition with date condition if applicable
+  const baseCondition = and(
+    eq(todos.userId, String(userId)),
+    sql`(${todos.title} ILIKE ${searchQuery} OR ${todos.description} ILIKE ${searchQuery})`
+  );
+
+  const whereCondition = dateCondition
+    ? and(baseCondition, dateCondition)
+    : baseCondition;
+
+  const [payload, totalResult] = await Promise.all([
+    db.query.todos.findMany({
+      with: {
+        todosTags: {
+          with: {
+            tag: {
+              columns: {
+                id: true,
+                name: true,
+                color: true,
+              },
+            },
+          },
+        },
+        user: {
+          columns: {
+            id: true,
+            username: true,
+            email: true,
+            verifiedEmail: true,
+          },
+        },
+        status: {
+          columns: {
+            id: true,
+            name: true,
+            label: true,
+            color: true,
+          },
         },
       },
-
-      user: {
-        columns: {
-          id: true,
-          username: true,
-          email: true,
-          verifiedEmail: true,
-        },
-      },
-    },
-    limit,
-    offset: page,
-    orderBy: (todo) => [sql`${todo.createdAt} DESC`],
-    where: (todo, { sql }) => {
-      const baseCondition = and(
-        eq(todo.userId, String(userId)),
-        sql`(${todo.title} ILIKE ${searchQuery} OR ${todo.description} ILIKE ${searchQuery})`
-      );
-      if (dateCondition) {
-        return and(baseCondition, dateCondition);
-      }
-      return baseCondition;
-    },
-  });
-
-  const totalResult = await db
-    .select({ count: sql`count(*)`.mapWith(Number) })
-    .from(todos)
-    .where(() => {
-      const baseCondition = and(
-        eq(todos.userId, String(userId)),
-        sql`(${todos.title} ILIKE ${searchQuery} OR ${todos.description} ILIKE ${searchQuery})`
-      );
-      if (dateCondition) {
-        return and(baseCondition, dateCondition);
-      }
-      return baseCondition;
-    });
+      limit,
+      offset: page,
+      orderBy: (todo) => [sql`${todo.createdAt} DESC`],
+      where: () => whereCondition,
+    }),
+    db
+      .select({ count: sql`count(*)`.mapWith(Number) })
+      .from(todos)
+      .where(() => whereCondition),
+  ]);
 
   const total = totalResult[0]?.count || 0;
 
@@ -119,7 +140,7 @@ export const createTodo = async ({
       title,
       description,
       isCompleted,
-      status,
+      statusId: status,
       priority,
     })
     .returning();
@@ -176,9 +197,6 @@ export const updateTodo = async (id: string, data: Partial<newTodo>) => {
     throw new Error("Todo ID is required for update");
   }
 
-  // console.log("Updating todo with data:", data);
-  // return;
-
   const tagNames: string[] = Array.isArray(data.tags)
     ? data.tags
     : typeof data.tags === "string"
@@ -187,26 +205,70 @@ export const updateTodo = async (id: string, data: Partial<newTodo>) => {
 
   const [updatedTodo] = await db
     .update(todos)
-    .set(data)
+    .set({
+      title: data.title,
+      description: data.description,
+      isCompleted: data.isCompleted,
+      statusId: data.status,
+      priority: data.priority,
+      updatedAt: new Date(),
+    })
     .where(eq(todos.id, id))
     .returning();
 
-  if (tagNames.length > 0) {
-    tagNames.map(async (tagName) => {
+  // filter tags ketika ada data tags yang dikirmkan pada update, apabila data tags tidak dikirimkan, maka tags tidak diupdate
+  if (data.tags !== undefined) {
+    // Hapus relasi tags lama
+    await db.delete(todosTags).where(eq(todosTags.todoId, id));
+
+    // Masukkan relasi tags baru
+    for (const tagName of tagNames) {
       const randomColor =
         "#" +
         Math.floor(Math.random() * 16777215)
           .toString(16)
           .padStart(6, "0");
-      const [newTag] = await db
-        .update(tags)
-        .set({
-          name: tagName,
-          color: randomColor,
-        })
-        .where(and(eq(tags.name, tagName), eq(tags.id, id)))
-        .returning();
-    });
+
+      // Cek apakah tag dengan nama dan userId yang sama sudah ada
+      const [existingTag] = await db
+        .select()
+        .from(tags)
+        .where(
+          and(
+            eq(tags.name, tagName),
+            eq(tags.userId, String(updatedTodo.userId))
+          )
+        );
+
+      let tagId: string;
+
+      if (existingTag) {
+        // Update warna jika tag sudah ada
+        const [updatedTag] = await db
+          .update(tags)
+          .set({ color: randomColor })
+          .where(eq(tags.id, existingTag.id))
+          .returning();
+        tagId = updatedTag.id;
+      } else {
+        // Masukkan tag baru
+        const [newTag] = await db
+          .insert(tags)
+          .values({
+            userId: String(updatedTodo.userId),
+            name: tagName,
+            color: randomColor,
+          })
+          .returning();
+        tagId = newTag.id;
+      }
+
+      // Relasikan todo dan tag
+      await db.insert(todosTags).values({
+        todoId: updatedTodo.id,
+        tagId,
+      });
+    }
   }
 
   return updatedTodo;

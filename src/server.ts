@@ -2,10 +2,13 @@
 import { Elysia } from "elysia";
 import { authController } from "./modules/auth";
 import cors from "@elysiajs/cors";
-import bearer from "@elysiajs/bearer";
 import { authGuard } from "./plugin/auth-guard";
-import { otpController } from "./modules/otp";
 import { todoController } from "./modules/todos";
+import {
+  otpController,
+  tagsController,
+  todoStatusController,
+} from "./modules/master-data";
 
 export const app = new Elysia()
   .use(
@@ -54,6 +57,8 @@ export const app = new Elysia()
       .use(otpController)
       .guard(authGuard)
       .use(todoController)
+      .use(tagsController)
+      .use(todoStatusController)
       .get("/me", async ({ jwt, status, bearer, cookie }) => {
         const verifyToken = await jwt.verify(bearer);
         if (!verifyToken) return (status(401), { error: "Unauthorized" });

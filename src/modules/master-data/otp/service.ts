@@ -1,8 +1,9 @@
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Resend } from "resend";
-import { verifyEmail } from "../auth/service";
-import OTPEmail from "../../emails/otp";
+import OTPEmail from "../../../emails/otp";
+import { verifyEmail } from "../../auth/service";
+
 
 export const otpStore = new Map<string, { otp: string; expiresAt: number }>();
 export const resend = new Resend(process.env.RESEND_API_KEY!);
