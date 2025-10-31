@@ -13,7 +13,7 @@ import {
 export const app = new Elysia()
   .use(
     cors({
-      origin: "http://localhost:5173",
+      origin: true,
       allowedHeaders: ["Content-Type", "Authorization"],
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       credentials: true,

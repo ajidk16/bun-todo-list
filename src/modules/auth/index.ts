@@ -66,8 +66,8 @@ export const authController = new Elysia({ prefix: "/auth" })
           email: user.email,
           verified: user.verifiedEmail,
         }),
-        httpOnly: false,
-        sameSite: "lax",
+        httpOnly: true,
+        sameSite: "strict",
         maxAge: 60 * 60 * 24 * 7, // 7 days
         path: "/",
       });
@@ -75,7 +75,7 @@ export const authController = new Elysia({ prefix: "/auth" })
       cookie.auth.set({
         value: refreshToken,
         httpOnly: true, // sementara true supaya cookie terlihat di DevTools
-        sameSite: "lax",
+        sameSite: "strict",
         path: "/",
         secure: true,
         maxAge: 60 * 60 * 24 * 7, // 7 days

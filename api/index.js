@@ -228,15 +228,15 @@ const authController = new Elysia({ prefix: "/auth" }).use(jwtPlugin).use(bearer
 			email: user.email,
 			verified: user.verifiedEmail
 		}),
-		httpOnly: false,
-		sameSite: "lax",
+		httpOnly: true,
+		sameSite: "strict",
 		maxAge: 3600 * 24 * 7,
 		path: "/"
 	});
 	cookie.auth.set({
 		value: refreshToken,
 		httpOnly: true,
-		sameSite: "lax",
+		sameSite: "strict",
 		path: "/",
 		secure: true,
 		maxAge: 3600 * 24 * 7
@@ -1043,7 +1043,7 @@ const todoStatusController = new Elysia({ prefix: "/todo-status" }).get("/", asy
 //#endregion
 //#region src/server.ts
 const app = new Elysia().use(cors({
-	origin: "http://localhost:5173",
+	origin: true,
 	allowedHeaders: ["Content-Type", "Authorization"],
 	methods: [
 		"GET",
