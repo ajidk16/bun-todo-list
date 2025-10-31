@@ -181,7 +181,7 @@ const verifyPassword = async (password, hashedPassword) => {
 const jwtPlugin = jwt({
 	secret: process.env.JWT_SECRET,
 	alg: "HS256",
-	exp: "15m"
+	exp: "7d"
 });
 
 //#endregion
@@ -198,7 +198,7 @@ const registerBody = t.Object({
 
 //#endregion
 //#region src/modules/auth/index.ts
-const authController = new Elysia({ prefix: "/auth" }).use(jwtPlugin).use(bearer()).post("/login", async ({ body: { username, password }, jwt: jwt$1, status, cookie }) => {
+const authController = new Elysia({ prefix: "/auth" }).use(jwtPlugin).use(bearer()).post("/login", async ({ body: { username, password }, jwt: jwt$1, status }) => {
 	const user = await findUserByUsername(username);
 	if (!user || !user.passwordHash) return status(404), {
 		error: "Invalid credentials",
@@ -212,37 +212,16 @@ const authController = new Elysia({ prefix: "/auth" }).use(jwtPlugin).use(bearer
 	const token = await jwt$1.sign({
 		id: user.id,
 		username: user.username,
-		email: user.email
+		email: user.email,
+		verified: user.verifiedEmail
 	});
-	const refreshToken = await jwt$1.sign({
+	await jwt$1.sign({
 		id: user.id,
 		username: user.username,
 		email: user.email,
+		verified: user.verifiedEmail,
 		type: "refresh",
 		exp: "7d"
-	});
-	cookie.userProfile.set({
-		value: JSON.stringify({
-			id: user.id,
-			username: user.username,
-			email: user.email,
-			verified: user.verifiedEmail
-		}),
-		httpOnly: true,
-		sameSite: "none",
-		secure: true,
-		partitioned: true,
-		maxAge: 3600 * 24 * 7,
-		path: "/"
-	});
-	cookie.auth.set({
-		value: refreshToken,
-		httpOnly: true,
-		sameSite: "none",
-		secure: true,
-		partitioned: true,
-		maxAge: 3600 * 24 * 7,
-		path: "/"
 	});
 	return status(200), {
 		status: 200,
@@ -251,7 +230,8 @@ const authController = new Elysia({ prefix: "/auth" }).use(jwtPlugin).use(bearer
 		data: {
 			id: user.id,
 			username: user.username,
-			email: user.email
+			email: user.email,
+			verified: user.verifiedEmail
 		}
 	};
 }, { body: loginBody }).post("/register", async ({ body: { username, email, password }, status, jwt: jwt$1, cookie }) => {
@@ -1046,8 +1026,12 @@ const todoStatusController = new Elysia({ prefix: "/todo-status" }).get("/", asy
 //#endregion
 //#region src/server.ts
 const app = new Elysia().use(cors({
-	origin: true,
-	allowedHeaders: ["Content-Type", "Authorization"],
+	origin: ["https://svelte-todo-list-ten.vercel.app", "http://localhost:5173"],
+	allowedHeaders: [
+		"Content-Type",
+		"Authorization",
+		"Cookie"
+	],
 	methods: [
 		"GET",
 		"POST",

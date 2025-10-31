@@ -9,19 +9,12 @@ import {
 import bearer from "@elysiajs/bearer";
 import { jwtPlugin } from "../../plugin/jwt";
 import { loginBody, registerBody } from "./model";
-import cors from "@elysiajs/cors";
 export const authController = new Elysia({ prefix: "/auth" })
   .use(jwtPlugin)
   .use(bearer())
   .post(
     "/login",
-    async ({
-      body: { username, password },
-      jwt,
-      status,
-      // cookie: { session },
-      cookie,
-    }) => {
+    async ({ body: { username, password }, jwt, status }) => {
       const user = await findUserByUsername(username);
 
       if (!user || !user.passwordHash) {
@@ -49,40 +42,42 @@ export const authController = new Elysia({ prefix: "/auth" })
         id: user.id,
         username: user.username,
         email: user.email,
+        verified: user.verifiedEmail,
       });
 
       const refreshToken = await jwt.sign({
         id: user.id,
         username: user.username,
         email: user.email,
+        verified: user.verifiedEmail,
         type: "refresh",
         exp: "7d", // 7 days
       });
 
-      cookie.userProfile.set({
-        value: JSON.stringify({
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          verified: user.verifiedEmail,
-        }),
-        httpOnly: true,
-        sameSite: "none",
-        secure: true,
-        partitioned: true,
-        maxAge: 60 * 60 * 24 * 7,
-        path: "/",
-      });
+      // cookie.userProfile.set({
+      //   value: JSON.stringify({
+      //     id: user.id,
+      //     username: user.username,
+      //     email: user.email,
+      //     verified: user.verifiedEmail,
+      //   }),
+      //   httpOnly: true,
+      //   sameSite: "none",
+      //   secure: true,
+      //   partitioned: true,
+      //   maxAge: 60 * 60 * 24 * 7,
+      //   path: "/",
+      // });
 
-      cookie.auth.set({
-        value: refreshToken,
-        httpOnly: true,
-        sameSite: "none",
-        secure: true,
-        partitioned: true,
-        maxAge: 60 * 60 * 24 * 7,
-        path: "/",
-      });
+      // cookie.auth.set({
+      //   value: refreshToken,
+      //   httpOnly: true,
+      //   sameSite: "none",
+      //   secure: true,
+      //   partitioned: true,
+      //   maxAge: 60 * 60 * 24 * 7,
+      //   path: "/",
+      // });
 
       return (
         status(200),
@@ -90,7 +85,12 @@ export const authController = new Elysia({ prefix: "/auth" })
           status: 200,
           message: "Login successful",
           token,
-          data: { id: user.id, username: user.username, email: user.email },
+          data: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            verified: user.verifiedEmail,
+          },
         }
       );
     },

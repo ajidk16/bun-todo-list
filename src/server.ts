@@ -13,8 +13,11 @@ import {
 export const app = new Elysia()
   .use(
     cors({
-      origin: true,
-      allowedHeaders: ["Content-Type", "Authorization"],
+      origin: [
+        "https://svelte-todo-list-ten.vercel.app",
+        "http://localhost:5173",
+      ],
+      allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       credentials: true,
       preflight: true, // Ensure OPTIONS requests are handled
