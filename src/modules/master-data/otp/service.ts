@@ -18,7 +18,7 @@ export async function sendOTP(to: string, baseURL: string) {
     React.createElement(OTPEmail, {
       otp,
       verifyUrl: `${process.env.FRONTEND_URL}/dashboard?to=${to}&otp=${otp}`,
-      supportEmail: "surajidk12@gmail.com",
+      supportEmail: "todo@todo-list.dkaji.my.id",
       brandName: "Todo List",
       expiresInMin: 10,
     })
@@ -31,7 +31,7 @@ export async function sendOTP(to: string, baseURL: string) {
     html,
   });
 
-  return { status: true, message: "OTP sent", data: res };
+  return { status: true, message: "OTP sent", data: to };
 }
 
 export async function verifyOTPHandler(to?: string, otpInput?: string) {

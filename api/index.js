@@ -684,19 +684,20 @@ async function sendOTP(to, baseURL) {
 	const html = renderToStaticMarkup(React.createElement(OTPEmail, {
 		otp,
 		verifyUrl: `${process.env.FRONTEND_URL}/dashboard?to=${to}&otp=${otp}`,
-		supportEmail: "surajidk12@gmail.com",
+		supportEmail: "todo@todo-list.dkaji.my.id",
 		brandName: "Todo List",
 		expiresInMin: 10
 	}));
+	await resend.emails.send({
+		from: "Todo List <noreply@todo-list.dkaji.my.id>",
+		to,
+		subject: "Your OTP Code",
+		html
+	});
 	return {
 		status: true,
 		message: "OTP sent",
-		data: await resend.emails.send({
-			from: "Todo List <noreply@todo-list.dkaji.my.id>",
-			to,
-			subject: "Your OTP Code",
-			html
-		})
+		data: to
 	};
 }
 async function verifyOTPHandler(to, otpInput) {

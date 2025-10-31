@@ -1,6 +1,5 @@
 import * as elysia0 from "elysia";
 import { Elysia } from "elysia";
-import * as resend0 from "resend";
 import * as _sinclair_typebox_errors0 from "@sinclair/typebox/errors";
 import * as elysia_error0 from "elysia/error";
 
@@ -191,7 +190,7 @@ declare const app: Elysia<"", {
               200: {
                 status: boolean;
                 message: string;
-                data: resend0.CreateEmailResponse;
+                data: string;
               };
               422: {
                 type: "validation";
