@@ -236,7 +236,7 @@ const authController = new Elysia({ prefix: "/auth" }).use(jwtPlugin).use(bearer
 	cookie.auth.set({
 		value: refreshToken,
 		httpOnly: true,
-		sameSite: "strict",
+		sameSite: "none",
 		path: "/",
 		secure: true,
 		maxAge: 3600 * 24 * 7
