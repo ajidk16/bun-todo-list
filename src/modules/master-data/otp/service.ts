@@ -12,6 +12,8 @@ export async function sendOTP(to: string, baseURL: string) {
   const expiresAt = Date.now() + 10 * 60 * 1000; // 10 menit
   otpStore.set(to, { otp, expiresAt });
 
+  // console.log(`OTP for ${to}: ${otp} (expires at ${new Date(expiresAt).toISOString()})`);
+
   const html = renderToStaticMarkup(
     React.createElement(OTPEmail, {
       otp,
