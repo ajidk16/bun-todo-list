@@ -229,7 +229,9 @@ const authController = new Elysia({ prefix: "/auth" }).use(jwtPlugin).use(bearer
 			verified: user.verifiedEmail
 		}),
 		httpOnly: true,
-		sameSite: "strict",
+		sameSite: "none",
+		secure: true,
+		partitioned: true,
 		maxAge: 3600 * 24 * 7,
 		path: "/"
 	});
@@ -237,9 +239,10 @@ const authController = new Elysia({ prefix: "/auth" }).use(jwtPlugin).use(bearer
 		value: refreshToken,
 		httpOnly: true,
 		sameSite: "none",
-		path: "/",
 		secure: true,
-		maxAge: 3600 * 24 * 7
+		partitioned: true,
+		maxAge: 3600 * 24 * 7,
+		path: "/"
 	});
 	return status(200), {
 		status: 200,
