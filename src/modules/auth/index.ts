@@ -109,7 +109,6 @@ export const authController = new Elysia({ prefix: "/auth" })
       const passwordHash = await hashPassword(password);
 
       const newUser = await createUser(username, email, passwordHash);
-      console.log("New User Created:", newUser);
 
       return (
         status(200),

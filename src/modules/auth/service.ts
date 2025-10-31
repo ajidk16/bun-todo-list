@@ -8,11 +8,14 @@ export const createUser = async (
   email: string,
   passwordHash: string
 ) => {
-  const newUser = await db.insert(users).values({
-    username,
-    email,
-    passwordHash,
-  });
+  const [newUser] = await db
+    .insert(users)
+    .values({
+      username,
+      email,
+      passwordHash,
+    })
+    .returning();
 
   return newUser;
 };

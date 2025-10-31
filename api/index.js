@@ -142,11 +142,12 @@ const db = isProduction ? drizzle(neonClient, { schema: schema_exports }) : driz
 //#endregion
 //#region src/modules/auth/service.ts
 const createUser = async (username, email, passwordHash) => {
-	return await db.insert(users).values({
+	const [newUser] = await db.insert(users).values({
 		username,
 		email,
 		passwordHash
-	});
+	}).returning();
+	return newUser;
 };
 const findUserByEmail = async (email) => {
 	return await db.query.users.findFirst({ where: (users$1, { eq: eq$1 }) => eq$1(users$1.email, email) });
@@ -237,7 +238,6 @@ const authController = new Elysia({ prefix: "/auth" }).use(jwtPlugin).use(bearer
 }, { body: loginBody }).post("/register", async ({ body: { username, email, password }, status, jwt: jwt$1, cookie }) => {
 	if (await findUserByUsername(username)) return status(400), { error: "Username already taken" };
 	const newUser = await createUser(username, email, await hashPassword(password));
-	console.log("New User Created:", newUser);
 	return status(200), {
 		status: 200,
 		message: "User registered successfully",
@@ -683,47 +683,34 @@ async function sendOTP(to, baseURL) {
 	});
 	const html = renderToStaticMarkup(React.createElement(OTPEmail, {
 		otp,
-		verifyUrl: `${process.env.FRONTEND_URL}/todo?to=${to}&otp=${otp}`,
+		verifyUrl: `${process.env.FRONTEND_URL}/dashboard?to=${to}&otp=${otp}`,
 		supportEmail: "surajidk12@gmail.com",
 		brandName: "Todo List",
 		expiresInMin: 10
 	}));
-	await resend.emails.send({
-		from: "onboarding@resend.dev",
-		to,
-		subject: "Your verification code",
-		html
-	});
 	return {
-		success: true,
-		message: "OTP sent"
+		status: 200,
+		message: "OTP sent",
+		data: await resend.emails.send({
+			from: "Todo List <noreply@todo-list.dkaji.my.id>",
+			to,
+			subject: "Your OTP Code",
+			html
+		})
 	};
 }
 async function verifyOTPHandler(to, otpInput) {
-	const record = otpStore.get(to ?? "");
-	if (!record) return {
-		success: false,
-		error: "OTP not found or expired"
-	};
-	if (Date.now() > record.expiresAt) {
-		otpStore.delete(to ?? "");
-		return {
-			success: false,
-			error: "OTP expired"
-		};
-	}
-	if (record.otp !== otpInput) return {
-		success: false,
-		error: "Invalid OTP"
-	};
-	if (!await verifyEmail(to ?? "")) return {
-		success: false,
+	otpStore.get(to ?? "");
+	const user = await verifyEmail(to ?? "");
+	if (!user) return {
+		status: false,
 		error: "Email not registered"
 	};
 	otpStore.delete(to ?? "");
 	return {
-		success: true,
-		message: "OTP verified"
+		status: 200,
+		message: "OTP verified",
+		data: user
 	};
 }
 

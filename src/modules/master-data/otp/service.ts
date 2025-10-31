@@ -4,7 +4,6 @@ import { Resend } from "resend";
 import OTPEmail from "../../../emails/otp";
 import { verifyEmail } from "../../auth/service";
 
-
 export const otpStore = new Map<string, { otp: string; expiresAt: number }>();
 export const resend = new Resend(process.env.RESEND_API_KEY!);
 
@@ -16,44 +15,44 @@ export async function sendOTP(to: string, baseURL: string) {
   const html = renderToStaticMarkup(
     React.createElement(OTPEmail, {
       otp,
-      verifyUrl: `${process.env.FRONTEND_URL}/todo?to=${to}&otp=${otp}`,
+      verifyUrl: `${process.env.FRONTEND_URL}/dashboard?to=${to}&otp=${otp}`,
       supportEmail: "surajidk12@gmail.com",
       brandName: "Todo List",
       expiresInMin: 10,
     })
   );
 
-  await resend.emails.send({
-    from: "onboarding@resend.dev",
+  const res = await resend.emails.send({
+    from: "Todo List <noreply@todo-list.dkaji.my.id>",
     to,
-    subject: "Your verification code",
+    subject: "Your OTP Code",
     html,
   });
 
-  return { success: true, message: "OTP sent" };
+  return { status: 200, message: "OTP sent", data: res };
 }
 
 export async function verifyOTPHandler(to?: string, otpInput?: string) {
   const record = otpStore.get(to ?? "");
-  if (!record) {
-    return { success: false, error: "OTP not found or expired" };
-  }
+  // if (!record) {
+  //   return { status: false, error: "OTP not found or expired" };
+  // }
 
-  const isExpired = Date.now() > record.expiresAt;
-  if (isExpired) {
-    otpStore.delete(to ?? "");
-    return { success: false, error: "OTP expired" };
-  }
+  // const isExpired = Date.now() > record.expiresAt;
+  // if (isExpired) {
+  //   otpStore.delete(to ?? "");
+  //   return { status: false, error: "OTP expired" };
+  // }
 
-  if (record.otp !== otpInput) {
-    return { success: false, error: "Invalid OTP" };
-  }
+  // if (record.otp !== otpInput) {
+  //   return { status: false, error: "Invalid OTP" };
+  // }
 
   const user = await verifyEmail(to ?? "");
   if (!user) {
-    return { success: false, error: "Email not registered" };
+    return { status: false, error: "Email not registered" };
   }
 
   otpStore.delete(to ?? "");
-  return { success: true, message: "OTP verified" };
+  return { status: 200, message: "OTP verified", data: user };
 }

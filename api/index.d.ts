@@ -1,5 +1,6 @@
 import * as elysia0 from "elysia";
 import { Elysia } from "elysia";
+import * as resend0 from "resend";
 import * as _sinclair_typebox_errors0 from "@sinclair/typebox/errors";
 import * as elysia_error0 from "elysia/error";
 
@@ -188,8 +189,9 @@ declare const app: Elysia<"", {
             headers: unknown;
             response: {
               200: {
-                success: boolean;
+                status: number;
                 message: string;
+                data: resend0.CreateEmailResponse;
               };
               422: {
                 type: "validation";
@@ -216,12 +218,30 @@ declare const app: Elysia<"", {
             headers: unknown;
             response: {
               200: {
-                success: boolean;
+                status: boolean;
                 error: string;
                 message?: undefined;
+                data?: undefined;
               } | {
-                success: boolean;
+                status: number;
                 message: string;
+                data: {
+                  success: boolean;
+                  error: string;
+                  data?: undefined;
+                } | {
+                  data: {
+                    id: string;
+                    username: string;
+                    email: string;
+                    verifiedEmail: boolean;
+                    passwordHash: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                  };
+                  success?: undefined;
+                  error?: undefined;
+                };
                 error?: undefined;
               };
               422: {
