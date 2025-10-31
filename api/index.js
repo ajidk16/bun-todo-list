@@ -689,7 +689,7 @@ async function sendOTP(to, baseURL) {
 		expiresInMin: 10
 	}));
 	return {
-		status: 200,
+		status: true,
 		message: "OTP sent",
 		data: await resend.emails.send({
 			from: "Todo List <noreply@todo-list.dkaji.my.id>",
@@ -700,7 +700,22 @@ async function sendOTP(to, baseURL) {
 	};
 }
 async function verifyOTPHandler(to, otpInput) {
-	otpStore.get(to ?? "");
+	const record = otpStore.get(to ?? "");
+	if (!record) return {
+		status: false,
+		error: "OTP not found or expired"
+	};
+	if (Date.now() > record.expiresAt) {
+		otpStore.delete(to ?? "");
+		return {
+			status: false,
+			error: "OTP expired"
+		};
+	}
+	if (record.otp !== otpInput) return {
+		status: false,
+		error: "Invalid OTP"
+	};
 	const user = await verifyEmail(to ?? "");
 	if (!user) return {
 		status: false,

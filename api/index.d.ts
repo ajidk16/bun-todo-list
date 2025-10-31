@@ -189,7 +189,7 @@ declare const app: Elysia<"", {
             headers: unknown;
             response: {
               200: {
-                status: number;
+                status: boolean;
                 message: string;
                 data: resend0.CreateEmailResponse;
               };

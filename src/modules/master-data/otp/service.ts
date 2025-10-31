@@ -29,24 +29,24 @@ export async function sendOTP(to: string, baseURL: string) {
     html,
   });
 
-  return { status: 200, message: "OTP sent", data: res };
+  return { status: true, message: "OTP sent", data: res };
 }
 
 export async function verifyOTPHandler(to?: string, otpInput?: string) {
   const record = otpStore.get(to ?? "");
-  // if (!record) {
-  //   return { status: false, error: "OTP not found or expired" };
-  // }
+  if (!record) {
+    return { status: false, error: "OTP not found or expired" };
+  }
 
-  // const isExpired = Date.now() > record.expiresAt;
-  // if (isExpired) {
-  //   otpStore.delete(to ?? "");
-  //   return { status: false, error: "OTP expired" };
-  // }
+  const isExpired = Date.now() > record.expiresAt;
+  if (isExpired) {
+    otpStore.delete(to ?? "");
+    return { status: false, error: "OTP expired" };
+  }
 
-  // if (record.otp !== otpInput) {
-  //   return { status: false, error: "Invalid OTP" };
-  // }
+  if (record.otp !== otpInput) {
+    return { status: false, error: "Invalid OTP" };
+  }
 
   const user = await verifyEmail(to ?? "");
   if (!user) {
