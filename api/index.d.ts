@@ -41,17 +41,19 @@ declare const app: Elysia<"", {
           message: string;
           errors: _sinclair_typebox_errors0.ValueErrorIterator[];
         })[];
+        status?: undefined;
         message?: undefined;
       } | {
-        error: string;
-        details?: undefined;
-        message?: undefined;
-      } | {
+        status: string;
         error: string;
         message: Readonly<Error> | Readonly<elysia0.ParseError> | Readonly<elysia0.InternalServerError> | Readonly<elysia0.InvalidCookieSignature> | Readonly<elysia_error0.InvalidFileType> | Readonly<elysia0.ElysiaCustomStatusResponse<number, number, number>>;
         details?: undefined;
       } | {
         message: string;
+      };
+      404: {
+        readonly status: 404;
+        readonly error: "Resource not found";
       };
     };
   };
@@ -78,17 +80,19 @@ declare const app: Elysia<"", {
             message: string;
             errors: _sinclair_typebox_errors0.ValueErrorIterator[];
           })[];
+          status?: undefined;
           message?: undefined;
         } | {
-          error: string;
-          details?: undefined;
-          message?: undefined;
-        } | {
+          status: string;
           error: string;
           message: Readonly<Error> | Readonly<elysia0.ParseError> | Readonly<elysia0.InternalServerError> | Readonly<elysia0.InvalidCookieSignature> | Readonly<elysia_error0.InvalidFileType> | Readonly<elysia0.ElysiaCustomStatusResponse<number, number, number>>;
           details?: undefined;
         } | {
           message: string;
+        };
+        404: {
+          readonly status: 404;
+          readonly error: "Resource not found";
         };
       };
     };
@@ -353,14 +357,16 @@ declare const app: Elysia<"", {
           body: unknown;
           params: {};
           query: {
-            page: number;
-            limit: number;
-            search: string;
+            search?: string | undefined;
+            userId?: string | undefined;
+            limit?: number | undefined;
+            page?: number | undefined;
           };
           headers: unknown;
           response: {
             200: {
               status: number;
+              message: string;
               data: {
                 name: string;
                 id: string;
@@ -382,8 +388,8 @@ declare const app: Elysia<"", {
                 }[];
               }[];
               pagination: {
-                page: number;
-                limit: number;
+                page: number | undefined;
+                limit: number | undefined;
                 total: number;
                 totalPages: number;
               };
@@ -400,6 +406,154 @@ declare const app: Elysia<"", {
           };
         };
       };
+    } & {
+      tags: {
+        ":id": {
+          get: {
+            body: unknown;
+            params: {
+              id: string;
+            };
+            query: unknown;
+            headers: unknown;
+            response: {
+              200: {
+                readonly data: {
+                  name: string;
+                  id: string;
+                  createdAt: Date;
+                  userId: string;
+                  color: string | null;
+                };
+              };
+              404: {
+                readonly status: 404;
+                readonly message: "Tag not found";
+              };
+              422: {
+                type: "validation";
+                on: string;
+                summary?: string;
+                message?: string;
+                found?: unknown;
+                property?: string;
+                expected?: string;
+              };
+            };
+          };
+        };
+      };
+    } & {
+      tags: {
+        post: {
+          body: {
+            name: string;
+            color: string;
+          };
+          params: {};
+          query: unknown;
+          headers: unknown;
+          response: {
+            201: {
+              readonly status: 201;
+              readonly message: "Tag created successfully";
+              readonly data: {
+                name: string;
+                id: string;
+                createdAt: Date;
+                userId: string;
+                color: string | null;
+              };
+            };
+            422: {
+              type: "validation";
+              on: string;
+              summary?: string;
+              message?: string;
+              found?: unknown;
+              property?: string;
+              expected?: string;
+            };
+            500: {
+              readonly status: 500;
+              readonly message: "Failed to create tag";
+            };
+          };
+        };
+      };
+    } & {
+      tags: {
+        ":id": {
+          put: {
+            body: {
+              name?: string | undefined;
+              color?: string | undefined;
+            };
+            params: {
+              id: string;
+            };
+            query: unknown;
+            headers: unknown;
+            response: {
+              200: {
+                readonly status: 200;
+                readonly message: "Tag updated successfully";
+                readonly data: {
+                  id: string;
+                  userId: string;
+                  name: string;
+                  color: string | null;
+                  createdAt: Date;
+                };
+              };
+              400: {
+                readonly status: 400;
+                readonly message: "Tag ID is required";
+              };
+              404: {
+                readonly status: 404;
+                readonly message: "Tag not found";
+              };
+              422: {
+                type: "validation";
+                on: string;
+                summary?: string;
+                message?: string;
+                found?: unknown;
+                property?: string;
+                expected?: string;
+              };
+            };
+          };
+        };
+      };
+    } & {
+      tags: {
+        ":id": {
+          delete: {
+            body: unknown;
+            params: {
+              id: string;
+            };
+            query: unknown;
+            headers: unknown;
+            response: {
+              200: {
+                readonly message: "Tag deleted successfully";
+              };
+              422: {
+                type: "validation";
+                on: string;
+                summary?: string;
+                message?: string;
+                found?: unknown;
+                property?: string;
+                expected?: string;
+              };
+            };
+          };
+        };
+      };
     };
   };
 } & {
@@ -410,9 +564,10 @@ declare const app: Elysia<"", {
           body: unknown;
           params: {};
           query: {
-            page: number;
-            limit: number;
-            search: string;
+            search?: string | undefined;
+            userId?: string | undefined;
+            limit?: number | undefined;
+            page?: number | undefined;
           };
           headers: unknown;
           response: {
@@ -421,6 +576,7 @@ declare const app: Elysia<"", {
               data: {
                 name: string;
                 id: string;
+                userId: string;
                 label: string;
                 color: string | null;
                 sortOrder: number | null;
@@ -445,8 +601,8 @@ declare const app: Elysia<"", {
                 }[];
               }[];
               pagination: {
-                page: number;
-                limit: number;
+                page: number | undefined;
+                limit: number | undefined;
                 total: number;
                 totalPages: number;
               };
@@ -465,11 +621,51 @@ declare const app: Elysia<"", {
       };
     } & {
       "todo-status": {
+        ":id": {
+          get: {
+            body: unknown;
+            params: {
+              id: string;
+            };
+            query: unknown;
+            headers: unknown;
+            response: {
+              200: {
+                readonly message: `Get todo status with id ${string}`;
+                readonly data: {
+                  name: string;
+                  id: string;
+                  userId: string;
+                  label: string;
+                  color: string | null;
+                  sortOrder: number | null;
+                };
+              };
+              404: {
+                readonly message: "Todo status not found";
+              };
+              422: {
+                type: "validation";
+                on: string;
+                summary?: string;
+                message?: string;
+                found?: unknown;
+                property?: string;
+                expected?: string;
+              };
+            };
+          };
+        };
+      };
+    } & {
+      "todo-status": {
         post: {
           body: {
+            userId?: string | undefined;
             name: string;
             label: string;
             color: string;
+            sortOrder: number;
           };
           params: {};
           query: unknown;
@@ -480,6 +676,7 @@ declare const app: Elysia<"", {
               readonly data: {
                 name: string;
                 id: string;
+                userId: string;
                 label: string;
                 color: string | null;
                 sortOrder: number | null;
@@ -496,6 +693,92 @@ declare const app: Elysia<"", {
               found?: unknown;
               property?: string;
               expected?: string;
+            };
+          };
+        };
+      };
+    } & {
+      "todo-status": {
+        ":id": {
+          put: {
+            body: {
+              name?: string | undefined;
+              userId?: string | undefined;
+              label?: string | undefined;
+              color?: string | undefined;
+              sortOrder?: number | undefined;
+            };
+            params: {
+              id: string;
+            };
+            query: unknown;
+            headers: unknown;
+            response: {
+              200: {
+                readonly message: "Todo status updated";
+                readonly data: {
+                  id: string;
+                  userId: string;
+                  name: string;
+                  label: string;
+                  color: string | null;
+                  sortOrder: number | null;
+                }[];
+              };
+              400: {
+                readonly message: "Failed to update todo status";
+              };
+              404: {
+                readonly status: 404;
+                readonly message: "Todo status not found";
+              };
+              422: {
+                type: "validation";
+                on: string;
+                summary?: string;
+                message?: string;
+                found?: unknown;
+                property?: string;
+                expected?: string;
+              };
+            };
+          };
+        };
+      };
+    } & {
+      "todo-status": {
+        ":id": {
+          delete: {
+            body: unknown;
+            params: {
+              id: string;
+            };
+            query: unknown;
+            headers: unknown;
+            response: {
+              200: {
+                readonly message: "Todo status deleted";
+                readonly data: {
+                  name: string;
+                  id: string;
+                  userId: string;
+                  label: string;
+                  color: string | null;
+                  sortOrder: number | null;
+                }[];
+              };
+              400: {
+                readonly message: "Failed to delete todo status";
+              };
+              422: {
+                type: "validation";
+                on: string;
+                summary?: string;
+                message?: string;
+                found?: unknown;
+                property?: string;
+                expected?: string;
+              };
             };
           };
         };
@@ -532,6 +815,10 @@ declare const app: Elysia<"", {
   schema: {};
   standaloneSchema: {};
   response: {
+    404: {
+      readonly status: 404;
+      readonly error: "Resource not found";
+    };
     200: {
       error: string;
       details: ({
@@ -547,12 +834,10 @@ declare const app: Elysia<"", {
         message: string;
         errors: _sinclair_typebox_errors0.ValueErrorIterator[];
       })[];
+      status?: undefined;
       message?: undefined;
     } | {
-      error: string;
-      details?: undefined;
-      message?: undefined;
-    } | {
+      status: string;
       error: string;
       message: Readonly<Error> | Readonly<elysia0.ParseError> | Readonly<elysia0.InternalServerError> | Readonly<elysia0.InvalidCookieSignature> | Readonly<elysia_error0.InvalidFileType> | Readonly<elysia0.ElysiaCustomStatusResponse<number, number, number>>;
       details?: undefined;

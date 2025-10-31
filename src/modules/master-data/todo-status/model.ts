@@ -1,23 +1,30 @@
+import { t } from "elysia";
 import z from "zod";
 
-export const QueryTags = z.object({
-  page: z.coerce.number().optional().default(1),
-  limit: z.coerce.number().optional().default(10),
-  search: z.coerce.string().optional().default(""),
+export const QueryTags = t.Object({
+  page: t.Optional(t.Numeric()),
+  limit: t.Optional(t.Numeric()),
+  search: t.Optional(t.String()),
+  userId: t.Optional(t.String()),
 });
-export type QueryTags = z.infer<typeof QueryTags>;
 
+export type QueryTags = typeof QueryTags.static;
 
-export const createTodoStatusSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  label: z.string().min(1, "Label is required"),
-  color: z.string().min(1, "Color is required"),
+export const createTodoStatusSchema = t.Object({
+  userId: t.Optional(t.String()),
+  name: t.String(),
+  label: t.String(),
+  color: t.String(),
+  sortOrder: t.Numeric(),
 });
-export type CreateTodoStatusSchema = z.infer<typeof createTodoStatusSchema>;
+export type CreateTodoStatusSchema = typeof createTodoStatusSchema.static;
 
-export const updateTodoStatusSchema = z.object({
-  name: z.string().min(1, "Name is required").optional(),
-  label: z.string().min(1, "Label is required").optional(),
-  color: z.string().min(1, "Color is required").optional(),
+export const updateTodoStatusSchema = t.Object({
+  userId: t.Optional(t.String()),
+  name: t.Optional(t.String()),
+  label: t.Optional(t.String()),
+  color: t.Optional(t.String()),
+  sortOrder: t.Optional(t.Numeric()),
 });
-export type UpdateTodoStatusSchema = z.infer<typeof updateTodoStatusSchema>;
+
+export type UpdateTodoStatusSchema = typeof updateTodoStatusSchema.static;

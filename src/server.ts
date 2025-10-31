@@ -20,7 +20,7 @@ export const app = new Elysia()
       preflight: true, // Ensure OPTIONS requests are handled
     })
   )
-  .onError(({ code, error, set }) => {
+  .onError(({ code, error, set, status }) => {
     switch (code) {
       case "VALIDATION":
         set.status = 400;
@@ -30,10 +30,17 @@ export const app = new Elysia()
         };
       case "NOT_FOUND":
         set.status = 404;
-        return { error: `Todo not found` };
+        return status(404, {
+          status: 404,
+          error: "Resource not found",
+        });
       default:
         set.status = 500;
-        return { error: "Internal server error", message: error };
+        return {
+          status: "error",
+          error: "Internal server error",
+          message: error,
+        };
     }
   })
   .get("/", () => {

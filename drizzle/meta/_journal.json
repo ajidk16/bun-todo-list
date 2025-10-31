@@ -8,6 +8,13 @@
       "when": 1761088152677,
       "tag": "0000_friendly_thunderbolt_ross",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1761829294532,
+      "tag": "0001_wakeful_maestro",
+      "breakpoints": true
     }
   ]
 }

@@ -59,6 +59,19 @@ export const authController = new Elysia({ prefix: "/auth" })
         exp: "7d", // 7 days
       });
 
+      cookie.userProfile.set({
+        value: JSON.stringify({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          verified: user.verifiedEmail,
+        }),
+        httpOnly: false,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        path: "/",
+      });
+
       cookie.auth.set({
         value: refreshToken,
         httpOnly: true, // sementara true supaya cookie terlihat di DevTools

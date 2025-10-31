@@ -1,4 +1,4 @@
-import { count, eq } from "drizzle-orm";
+import { and, asc, count, eq, ilike, or } from "drizzle-orm";
 import { db } from "../../../db/clients";
 import {
   CreateTodoStatusSchema,
@@ -11,8 +11,22 @@ export const listOfTodoStatus = async ({
   page = 1,
   limit = 10,
   search,
+  userId,
 }: QueryTags) => {
   const searchQuery = `%${search}%`;
+
+  let seachCondition;
+  if (search) {
+    seachCondition = or(
+      ilike(statuses.name, searchQuery),
+      ilike(statuses.label, searchQuery),
+      ilike(statuses.color, searchQuery)
+    );
+  }
+
+  const baseCondition = eq(statuses.userId, String(userId));
+
+  const whereCondition = and(seachCondition, baseCondition);
 
   const payload = await db.query.statuses.findMany({
     with: {
@@ -53,8 +67,8 @@ export const listOfTodoStatus = async ({
     },
     offset: page,
     limit,
-    where: (fields, { ilike, or }) =>
-      or(ilike(fields.name, searchQuery), ilike(fields.label, searchQuery)),
+    orderBy: (fields) => [asc(fields.sortOrder)],
+    where: () => whereCondition,
   });
 
   // total count can be added if needed
@@ -76,13 +90,17 @@ export const createTodoStatus = async ({
   name,
   label,
   color,
+  userId,
+  sortOrder,
 }: CreateTodoStatusSchema) => {
   const newTodoStatus = await db
     .insert(statuses)
     .values({
+      userId: String(userId),
       name,
       label,
       color,
+      sortOrder,
     })
     .returning();
 
@@ -91,7 +109,7 @@ export const createTodoStatus = async ({
 
 export const updateTodoStatus = async (
   id: string,
-  { name, label, color }: UpdateTodoStatusSchema
+  { name, label, color, userId, sortOrder }: UpdateTodoStatusSchema
 ) => {
   const updatedTodoStatus = await db
     .update(statuses)
@@ -99,6 +117,8 @@ export const updateTodoStatus = async (
       name,
       label,
       color,
+      userId,
+      sortOrder,
     })
     .where(eq(statuses.id, id))
     .returning();

@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { and, count, eq, relations, sql } from "drizzle-orm";
+import { and, asc, count, eq, ilike, or, relations, sql } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { drizzle as drizzle$1 } from "drizzle-orm/postgres-js";
@@ -36,7 +36,6 @@ var schema_exports = /* @__PURE__ */ __export({
 	tags: () => tags,
 	tagsRelations: () => tagsRelations,
 	todoPriority: () => todoPriority,
-	todoStatus: () => todoStatus,
 	todos: () => todos,
 	todosRelations: () => todosRelations,
 	todosTags: () => todosTags,
@@ -44,12 +43,6 @@ var schema_exports = /* @__PURE__ */ __export({
 	users: () => users,
 	usersRelations: () => usersRelations
 });
-const todoStatus = pgEnum("todo_status", [
-	"pending",
-	"in_progress",
-	"completed",
-	"archived"
-]);
 const todoPriority = pgEnum("todo_priority", [
 	"low",
 	"medium",
@@ -78,6 +71,7 @@ const todos = pgTable("todos", {
 });
 const statuses = pgTable("statuses", {
 	id: uuid("id").primaryKey().defaultRandom(),
+	userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
 	name: varchar("name", { length: 50 }).notNull().unique(),
 	label: varchar("label", { length: 100 }).notNull(),
 	color: varchar("color", { length: 7 }).default("#3b82f6"),
@@ -106,7 +100,13 @@ const todosRelations = relations(todos, ({ one, many }) => ({
 	}),
 	todosTags: many(todosTags)
 }));
-const statusesRelations = relations(statuses, ({ many }) => ({ todos: many(todos) }));
+const statusesRelations = relations(statuses, ({ many, one }) => ({
+	todos: many(todos),
+	user: one(users, {
+		fields: [statuses.userId],
+		references: [users.id]
+	})
+}));
 const usersRelations = relations(users, ({ many }) => ({
 	todos: many(todos),
 	tags: many(tags)
@@ -220,6 +220,18 @@ const authController = new Elysia({ prefix: "/auth" }).use(jwtPlugin).use(bearer
 		email: user.email,
 		type: "refresh",
 		exp: "7d"
+	});
+	cookie.userProfile.set({
+		value: JSON.stringify({
+			id: user.id,
+			username: user.username,
+			email: user.email,
+			verified: user.verifiedEmail
+		}),
+		httpOnly: false,
+		sameSite: "lax",
+		maxAge: 3600 * 24 * 7,
+		path: "/"
 	});
 	cookie.auth.set({
 		value: refreshToken,
@@ -746,8 +758,9 @@ const otpController = new Elysia({ prefix: "/otp" }).get("/send", async ({ reque
 
 //#endregion
 //#region src/modules/master-data/tags/service.ts
-const listOfTags = async ({ page = 1, limit = 10, search }) => {
+const listOfTags = async ({ page = 1, limit = 10, search, userId }) => {
 	const searchQuery = `%${search}%`;
+	const whereCondition = and(eq(tags.userId, String(userId)), or(ilike(tags.name, searchQuery), ilike(tags.color, searchQuery)));
 	const payload = await db.query.tags.findMany({
 		with: { todosTags: { with: { todo: { columns: {
 			id: true,
@@ -759,46 +772,122 @@ const listOfTags = async ({ page = 1, limit = 10, search }) => {
 		} } } } },
 		offset: page,
 		limit,
-		where: (fields, { ilike, or }) => or(ilike(fields.name, searchQuery), ilike(fields.color, searchQuery))
+		orderBy: (tags$1, { desc }) => [desc(tags$1.createdAt)],
+		where: () => whereCondition
 	});
 	return {
 		total: (await db.select({ count: count() }).from(tags)).at(0)?.count ?? 0,
 		payload
 	};
 };
+const getTagById = async (id) => {
+	return await db.query.tags.findFirst({ where: eq(tags.id, id) });
+};
+const createTag = async (userId, name, color) => {
+	const [newTag] = await db.insert(tags).values({
+		name,
+		color,
+		userId
+	}).returning();
+	return newTag;
+};
+const updateTag = async (id, name, color) => {
+	const [updatedTag] = await db.update(tags).set({
+		name,
+		color
+	}).where(eq(tags.id, id)).returning();
+	return updatedTag;
+};
 
 //#endregion
 //#region src/modules/master-data/tags/model.ts
-const QueryTags$1 = z$1.object({
-	page: z$1.coerce.number().optional().default(1),
-	limit: z$1.coerce.number().optional().default(10),
-	search: z$1.coerce.string().optional().default("")
+const QueryTags$1 = t.Object({
+	userId: t.Optional(t.String()),
+	page: t.Optional(t.Numeric({ default: 1 })),
+	limit: t.Optional(t.Numeric({ default: 10 })),
+	search: t.Optional(t.String())
+});
+const BodyTag = t.Object({
+	name: t.String(),
+	color: t.String()
+});
+const UpdateBodyTag = t.Object({
+	name: t.Optional(t.String()),
+	color: t.Optional(t.String())
 });
 
 //#endregion
 //#region src/modules/master-data/tags/index.ts
-const tagsController = new Elysia({ prefix: "/tags" }).get("/", async ({ query: { page, limit, search }, status }) => {
+const tagsController = new Elysia({ prefix: "/tags" }).get("/", async ({ query: { page, limit, search }, status, set }) => {
 	const { total, payload: tags$1 } = await listOfTags({
 		limit,
-		page: (page - 1) * limit,
-		search: search?.toLowerCase() ?? ""
+		page: (Number(page) - 1) * Number(limit),
+		search: search?.toLowerCase() ?? "",
+		userId: String(set.headers["x-user-id"])
 	});
 	return status(200), {
 		status: 200,
+		message: "Tags retrieved successfully",
 		data: tags$1,
 		pagination: {
 			page,
 			limit,
 			total,
-			totalPages: Math.ceil(total / limit)
+			totalPages: Math.ceil(total / Number(limit))
 		}
 	};
-}, { query: QueryTags$1 });
+}, { query: QueryTags$1 }).get(":id", async ({ params, status }) => {
+	const tag = await getTagById(params.id);
+	if (!tag) return status(404, {
+		status: 404,
+		message: "Tag not found"
+	});
+	return status(200, { data: tag });
+}).post("/", async ({ body: { name, color }, status, set }) => {
+	const newTag = await createTag(String(set.headers["x-user-id"]), name, color);
+	if (!newTag) return status(500, {
+		status: 500,
+		message: "Failed to create tag"
+	});
+	return status(201, {
+		status: 201,
+		message: "Tag created successfully",
+		data: newTag
+	});
+}, { body: BodyTag }).put("/:id", async ({ params: { id }, body: { name, color }, status }) => {
+	if (!id) return status(400, {
+		status: 400,
+		message: "Tag ID is required"
+	});
+	if (!await getTagById(id)) return status(404, {
+		status: 404,
+		message: "Tag not found"
+	});
+	const updatedTag = await updateTag(id, String(name), String(color));
+	if (!updatedTag) return status(404, {
+		status: 404,
+		message: "Tag not found"
+	});
+	return status(200, {
+		status: 200,
+		message: "Tag updated successfully",
+		data: updatedTag
+	});
+}, {
+	params: t.Object({ id: t.String() }),
+	body: UpdateBodyTag
+}).delete("/:id", async ({ params: { id }, status }) => {
+	return status(200, { message: "Tag deleted successfully" });
+}, { params: t.Object({ id: t.String() }) });
 
 //#endregion
 //#region src/modules/master-data/todo-status/service.ts
-const listOfTodoStatus = async ({ page = 1, limit = 10, search }) => {
+const listOfTodoStatus = async ({ page = 1, limit = 10, search, userId }) => {
 	const searchQuery = `%${search}%`;
+	let seachCondition;
+	if (search) seachCondition = or(ilike(statuses.name, searchQuery), ilike(statuses.label, searchQuery), ilike(statuses.color, searchQuery));
+	const baseCondition = eq(statuses.userId, String(userId));
+	const whereCondition = and(seachCondition, baseCondition);
 	const payload = await db.query.statuses.findMany({
 		with: { todos: {
 			columns: {
@@ -830,46 +919,70 @@ const listOfTodoStatus = async ({ page = 1, limit = 10, search }) => {
 		} },
 		offset: page,
 		limit,
-		where: (fields, { ilike, or }) => or(ilike(fields.name, searchQuery), ilike(fields.label, searchQuery))
+		orderBy: (fields) => [asc(fields.sortOrder)],
+		where: () => whereCondition
 	});
 	return {
 		total: (await db.select({ count: count() }).from(statuses)).at(0)?.count ?? 0,
 		payload
 	};
 };
-const createTodoStatus = async ({ name, label, color }) => {
+const getTodoStatusById = async (id) => {
+	return await db.query.statuses.findFirst({ where: eq(statuses.id, id) });
+};
+const createTodoStatus = async ({ name, label, color, userId, sortOrder }) => {
 	return await db.insert(statuses).values({
+		userId: String(userId),
 		name,
 		label,
-		color
+		color,
+		sortOrder
 	}).returning();
+};
+const updateTodoStatus = async (id, { name, label, color, userId, sortOrder }) => {
+	return await db.update(statuses).set({
+		name,
+		label,
+		color,
+		userId,
+		sortOrder
+	}).where(eq(statuses.id, id)).returning();
+};
+const deleteTodoStatus = async (id) => {
+	return await db.delete(statuses).where(eq(statuses.id, id)).returning();
 };
 
 //#endregion
 //#region src/modules/master-data/todo-status/model.ts
-const QueryTags = z$1.object({
-	page: z$1.coerce.number().optional().default(1),
-	limit: z$1.coerce.number().optional().default(10),
-	search: z$1.coerce.string().optional().default("")
+const QueryTags = t.Object({
+	page: t.Optional(t.Numeric()),
+	limit: t.Optional(t.Numeric()),
+	search: t.Optional(t.String()),
+	userId: t.Optional(t.String())
 });
-const createTodoStatusSchema = z$1.object({
-	name: z$1.string().min(1, "Name is required"),
-	label: z$1.string().min(1, "Label is required"),
-	color: z$1.string().min(1, "Color is required")
+const createTodoStatusSchema = t.Object({
+	userId: t.Optional(t.String()),
+	name: t.String(),
+	label: t.String(),
+	color: t.String(),
+	sortOrder: t.Numeric()
 });
-const updateTodoStatusSchema = z$1.object({
-	name: z$1.string().min(1, "Name is required").optional(),
-	label: z$1.string().min(1, "Label is required").optional(),
-	color: z$1.string().min(1, "Color is required").optional()
+const updateTodoStatusSchema = t.Object({
+	userId: t.Optional(t.String()),
+	name: t.Optional(t.String()),
+	label: t.Optional(t.String()),
+	color: t.Optional(t.String()),
+	sortOrder: t.Optional(t.Numeric())
 });
 
 //#endregion
 //#region src/modules/master-data/todo-status/index.ts
-const todoStatusController = new Elysia({ prefix: "/todo-status" }).get("/", async ({ query: { page, limit, search }, status }) => {
+const todoStatusController = new Elysia({ prefix: "/todo-status" }).get("/", async ({ query: { page, limit, search }, status, set }) => {
 	const { total, payload: tags$1 } = await listOfTodoStatus({
 		limit,
-		page: (page - 1) * limit,
-		search: search?.toLowerCase() ?? ""
+		page: (Number(page) - 1) * Number(limit),
+		search: search?.toLowerCase() ?? "",
+		userId: String(set.headers["x-user-id"])
 	});
 	return status(200), {
 		status: 200,
@@ -878,21 +991,54 @@ const todoStatusController = new Elysia({ prefix: "/todo-status" }).get("/", asy
 			page,
 			limit,
 			total,
-			totalPages: Math.ceil(total / limit)
+			totalPages: Math.ceil(total / Number(limit))
 		}
 	};
-}, { query: QueryTags }).post("/", async ({ body: { name, label, color }, status }) => {
+}, { query: QueryTags }).get("/:id", async ({ params: { id }, status }) => {
+	const tag = await getTodoStatusById(id);
+	if (!tag) return status(404, { message: "Todo status not found" });
+	return status(200, {
+		message: `Get todo status with id ${id}`,
+		data: tag
+	});
+}, { params: z$1.object({ id: z$1.string().uuid() }) }).post("/", async ({ body: { name, label, color, sortOrder }, status, set }) => {
 	const newStatus = await createTodoStatus({
+		userId: String(set.headers["x-user-id"]),
 		name,
 		label,
-		color
+		color,
+		sortOrder
 	});
 	if (!newStatus) return status(400, { message: "Failed to create todo status" });
 	return status(201, {
 		message: "Todo status created",
 		data: newStatus
 	});
-}, { body: createTodoStatusSchema });
+}, { body: createTodoStatusSchema }).put("/:id", async ({ body: { name, label, color, sortOrder }, params: { id }, status, set }) => {
+	if (!await getTodoStatusById(id)) return status(404, {
+		status: 404,
+		message: "Todo status not found"
+	});
+	const updatedStatus = await updateTodoStatus(id, {
+		name,
+		label,
+		color,
+		sortOrder,
+		userId: String(set.headers["x-user-id"])
+	});
+	if (!updatedStatus) return status(400, { message: "Failed to update todo status" });
+	return status(200, {
+		message: "Todo status updated",
+		data: updatedStatus
+	});
+}, { body: updateTodoStatusSchema }).delete("/:id", async ({ params: { id }, status }) => {
+	const deletedStatus = await deleteTodoStatus(id);
+	if (!deletedStatus) return status(400, { message: "Failed to delete todo status" });
+	return status(200, {
+		message: "Todo status deleted",
+		data: deletedStatus
+	});
+});
 
 //#endregion
 //#region src/server.ts
@@ -908,7 +1054,7 @@ const app = new Elysia().use(cors({
 	],
 	credentials: true,
 	preflight: true
-})).onError(({ code, error, set }) => {
+})).onError(({ code, error, set, status }) => {
 	switch (code) {
 		case "VALIDATION":
 			set.status = 400;
@@ -918,10 +1064,14 @@ const app = new Elysia().use(cors({
 			};
 		case "NOT_FOUND":
 			set.status = 404;
-			return { error: `Todo not found` };
+			return status(404, {
+				status: 404,
+				error: "Resource not found"
+			});
 		default:
 			set.status = 500;
 			return {
+				status: "error",
 				error: "Internal server error",
 				message: error
 			};

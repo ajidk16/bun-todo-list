@@ -11,14 +11,7 @@ import {
   primaryKey,
 } from "drizzle-orm/pg-core";
 
-// ENUM untuk status dan prioritas
-export const todoStatus = pgEnum("todo_status", [
-  "pending",
-  "in_progress",
-  "completed",
-  "archived",
-]);
-
+// ENUM untuk  prioritas todo
 export const todoPriority = pgEnum("todo_priority", [
   "low",
   "medium",
@@ -57,6 +50,9 @@ export const todos = pgTable("todos", {
 
 export const statuses = pgTable("statuses", {
   id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 50 }).notNull().unique(),
   label: varchar("label", { length: 100 }).notNull(),
   color: varchar("color", { length: 7 }).default("#3b82f6"),
@@ -103,8 +99,12 @@ export const todosRelations = relations(todos, ({ one, many }) => ({
   todosTags: many(todosTags),
 }));
 
-export const statusesRelations = relations(statuses, ({ many }) => ({
+export const statusesRelations = relations(statuses, ({ many, one }) => ({
   todos: many(todos),
+  user: one(users, {
+    fields: [statuses.userId],
+    references: [users.id],
+  }),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
