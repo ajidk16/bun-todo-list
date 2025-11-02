@@ -675,7 +675,7 @@ OTPEmail.PreviewProps = {
 //#region src/modules/master-data/otp/service.ts
 const otpStore = /* @__PURE__ */ new Map();
 const resend = new Resend(process.env.RESEND_API_KEY);
-nodemailer.createTransport({
+const transporter = nodemailer.createTransport({
 	service: "gmail",
 	auth: {
 		user: process.env.GMAIL_USER,
@@ -696,10 +696,10 @@ async function sendOTP(to, baseURL) {
 		brandName: "Todo List",
 		expiresInMin: 10
 	}));
-	await resend.emails.send({
-		from: "Todo List <noreply@todo-list.dkaji.my.id>",
+	await transporter.sendMail({
+		from: `Todo List <${process.env.GMAIL_USER}>`,
 		to,
-		subject: "Your OTP Code",
+		subject: "Kode OTP Anda",
 		html
 	});
 	return {
