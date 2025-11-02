@@ -12,6 +12,7 @@ import cors from "@elysiajs/cors";
 import dayjs from "dayjs";
 import z$1, { z } from "zod";
 import * as React from "react";
+import nodemailer from "nodemailer";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Resend } from "resend";
 import { Button, Column, Container, Row, Section, Tailwind, Text } from "@react-email/components";
@@ -674,6 +675,13 @@ OTPEmail.PreviewProps = {
 //#region src/modules/master-data/otp/service.ts
 const otpStore = /* @__PURE__ */ new Map();
 const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+	service: "gmail",
+	auth: {
+		user: process.env.GMAIL_USER,
+		pass: process.env.GMAIL_PASS
+	}
+});
 async function sendOTP(to, baseURL) {
 	const otp = (Math.floor(Math.random() * 9e5) + 1e5).toString();
 	const expiresAt = Date.now() + 600 * 1e3;
@@ -688,10 +696,10 @@ async function sendOTP(to, baseURL) {
 		brandName: "Todo List",
 		expiresInMin: 10
 	}));
-	await resend.emails.send({
-		from: "Todo List <noreply@todo-list.dkaji.my.id>",
+	await transporter.sendMail({
+		from: `Todo List <${process.env.GMAIL_USER}>`,
 		to,
-		subject: "Your OTP Code",
+		subject: "Kode OTP Anda",
 		html
 	});
 	return {
