@@ -177,6 +177,24 @@ declare const app: Elysia<"", {
 } & {
   api: {
     v1: {
+      me: {
+        get: {
+          body: unknown;
+          params: {};
+          query: unknown;
+          headers: unknown;
+          response: {
+            [x: string]: any;
+            [x: number]: any;
+            [x: symbol]: any;
+          };
+        };
+      };
+    };
+  };
+} & {
+  api: {
+    v1: {
       otp: {
         send: {
           get: {
@@ -799,24 +817,6 @@ declare const app: Elysia<"", {
                 expected?: string;
               };
             };
-          };
-        };
-      };
-    };
-  };
-} & {
-  api: {
-    v1: {
-      me: {
-        get: {
-          body: unknown;
-          params: {};
-          query: unknown;
-          headers: unknown;
-          response: {
-            [x: string]: any;
-            [x: number]: any;
-            [x: symbol]: any;
           };
         };
       };

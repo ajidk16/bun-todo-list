@@ -675,7 +675,7 @@ OTPEmail.PreviewProps = {
 //#region src/modules/master-data/otp/service.ts
 const otpStore = /* @__PURE__ */ new Map();
 const resend = new Resend(process.env.RESEND_API_KEY);
-const transporter = nodemailer.createTransport({
+nodemailer.createTransport({
 	service: "gmail",
 	auth: {
 		user: process.env.GMAIL_USER,
@@ -696,10 +696,10 @@ async function sendOTP(to, baseURL) {
 		brandName: "Todo List",
 		expiresInMin: 10
 	}));
-	await transporter.sendMail({
-		from: `Todo List <${process.env.GMAIL_USER}>`,
+	await resend.emails.send({
+		from: "Todo List <noreply@todo-list.dkaji.my.id>",
 		to,
-		subject: "Kode OTP Anda",
+		subject: "Your OTP Code",
 		html
 	});
 	return {
@@ -1076,15 +1076,7 @@ const app = new Elysia().use(cors({
 	}
 }).get("/", () => {
 	return { message: "selamat datang suraji" };
-}).get("/suraji", () => ({ message: "halo suraji!" })).group("/api/v1", (app$1) => app$1.use(authController).onBeforeHandle(async ({ jwt: jwt$1, bearer: bearer$1, set, status, cookie }) => {
-	const isToken = cookie.auth?.value || bearer$1;
-	const token = await jwt$1.verify(String(isToken));
-	if (!token) return status(401), { error: "Unauthorized" };
-	set.headers["x-user-id"] = String(token.id);
-	set.headers["x-user-email"] = String(token.email);
-	set.headers["x-user-username"] = String(token.username);
-	set.headers["x-user-verifiedEmail"] = String(token.verifiedEmail);
-}).use(otpController).guard(authGuard).use(todoController).use(tagsController).use(todoStatusController).get("/me", async ({ jwt: jwt$1, status, bearer: bearer$1, cookie }) => {
+}).get("/suraji", () => ({ message: "halo suraji!" })).group("/api/v1", (app$1) => app$1.use(authController).get("/me", async ({ jwt: jwt$1, status, bearer: bearer$1, cookie }) => {
 	const verifyToken = await jwt$1.verify(bearer$1);
 	if (!verifyToken) return status(401), { error: "Unauthorized" };
 	return {
@@ -1092,7 +1084,16 @@ const app = new Elysia().use(cors({
 		user: verifyToken,
 		cookie
 	};
-}));
+}).onBeforeHandle(async ({ jwt: jwt$1, bearer: bearer$1, set, status, cookie }) => {
+	const isToken = bearer$1 ? bearer$1 : cookie.auth?.value;
+	if (!isToken) return status(401), { error: "Token not found" };
+	const token = await jwt$1.verify(String(isToken));
+	if (!token) return status(401), { error: "Unauthorized" };
+	set.headers["x-user-id"] = String(token.id);
+	set.headers["x-user-email"] = String(token.email);
+	set.headers["x-user-username"] = String(token.username);
+	set.headers["x-user-verifiedEmail"] = String(token.verifiedEmail);
+}).use(otpController).guard(authGuard).use(todoController).use(tagsController).use(todoStatusController));
 if (process.env.NODE_ENV !== "production") app.listen(5016, () => {
 	console.log("Server running at http://localhost:5016");
 });
