@@ -1,4 +1,5 @@
 import * as React from "react";
+import nodemailer from "nodemailer";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Resend } from "resend";
 import OTPEmail from "../../../emails/otp";
@@ -6,6 +7,14 @@ import { verifyEmail } from "../../auth/service";
 
 export const otpStore = new Map<string, { otp: string; expiresAt: number }>();
 export const resend = new Resend(process.env.RESEND_API_KEY!);
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
+  },
+});
 
 export async function sendOTP(to: string, baseURL: string) {
   const otp = (Math.floor(Math.random() * 900000) + 100000).toString();
@@ -24,10 +33,17 @@ export async function sendOTP(to: string, baseURL: string) {
     })
   );
 
-  const res = await resend.emails.send({
-    from: "Todo List <noreply@todo-list.dkaji.my.id>",
+  // const res = await resend.emails.send({
+  //   from: "Todo List <noreply@todo-list.dkaji.my.id>",
+  //   to,
+  //   subject: "Your OTP Code",
+  //   html,
+  // });
+
+  const res = await transporter.sendMail({
+    from: `Todo List <${process.env.GMAIL_USER}>`,
     to,
-    subject: "Your OTP Code",
+    subject: "Kode OTP Anda",
     html,
   });
 
