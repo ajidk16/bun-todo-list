@@ -431,6 +431,7 @@ declare const app: Elysia<"", {
           body: unknown;
           params: {};
           query: {
+            status?: string | boolean | undefined;
             search?: string | undefined;
             userId?: string | undefined;
             limit?: number | undefined;
@@ -442,6 +443,7 @@ declare const app: Elysia<"", {
               status: number;
               message: string;
               data: {
+                status: boolean;
                 name: string;
                 id: string;
                 createdAt: Date;
@@ -493,6 +495,7 @@ declare const app: Elysia<"", {
             response: {
               200: {
                 readonly data: {
+                  status: boolean;
                   name: string;
                   id: string;
                   createdAt: Date;
@@ -521,6 +524,7 @@ declare const app: Elysia<"", {
       tags: {
         post: {
           body: {
+            status?: string | boolean | undefined;
             name: string;
             color: string;
           };
@@ -532,6 +536,7 @@ declare const app: Elysia<"", {
               readonly status: 201;
               readonly message: "Tag created successfully";
               readonly data: {
+                status: boolean;
                 name: string;
                 id: string;
                 createdAt: Date;
@@ -560,6 +565,7 @@ declare const app: Elysia<"", {
         ":id": {
           put: {
             body: {
+              status?: string | boolean | undefined;
               name?: string | undefined;
               color?: string | undefined;
             };
@@ -577,6 +583,7 @@ declare const app: Elysia<"", {
                   userId: string;
                   name: string;
                   color: string | null;
+                  status: boolean;
                   createdAt: Date;
                 };
               };
@@ -638,6 +645,7 @@ declare const app: Elysia<"", {
           body: unknown;
           params: {};
           query: {
+            status?: string | boolean | undefined;
             search?: string | undefined;
             userId?: string | undefined;
             limit?: number | undefined;
@@ -648,6 +656,7 @@ declare const app: Elysia<"", {
             200: {
               status: number;
               data: {
+                status: boolean;
                 name: string;
                 id: string;
                 userId: string;
@@ -707,6 +716,7 @@ declare const app: Elysia<"", {
               200: {
                 readonly message: `Get todo status with id ${string}`;
                 readonly data: {
+                  status: boolean;
                   name: string;
                   id: string;
                   userId: string;
@@ -735,6 +745,7 @@ declare const app: Elysia<"", {
       "todo-status": {
         post: {
           body: {
+            status?: string | boolean | undefined;
             userId?: string | undefined;
             name: string;
             label: string;
@@ -748,6 +759,7 @@ declare const app: Elysia<"", {
             201: {
               readonly message: "Todo status created";
               readonly data: {
+                status: boolean;
                 name: string;
                 id: string;
                 userId: string;
@@ -776,6 +788,7 @@ declare const app: Elysia<"", {
         ":id": {
           put: {
             body: {
+              status?: string | boolean | undefined;
               name?: string | undefined;
               userId?: string | undefined;
               label?: string | undefined;
@@ -796,6 +809,7 @@ declare const app: Elysia<"", {
                   name: string;
                   label: string;
                   color: string | null;
+                  status: boolean;
                   sortOrder: number | null;
                 }[];
               };
@@ -833,6 +847,7 @@ declare const app: Elysia<"", {
               200: {
                 readonly message: "Todo status deleted";
                 readonly data: {
+                  status: boolean;
                   name: string;
                   id: string;
                   userId: string;

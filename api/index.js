@@ -76,6 +76,7 @@ const statuses = pgTable("statuses", {
 	name: varchar("name", { length: 50 }).notNull().unique(),
 	label: varchar("label", { length: 100 }).notNull(),
 	color: varchar("color", { length: 7 }).default("#3b82f6"),
+	status: boolean("status").notNull().default(true),
 	sortOrder: integer("sort_order").default(0)
 });
 const tags = pgTable("tags", {
@@ -83,6 +84,7 @@ const tags = pgTable("tags", {
 	userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
 	name: varchar("name", { length: 50 }).notNull(),
 	color: varchar("color", { length: 7 }).default("#3b82f6"),
+	status: boolean("status").notNull().default(true),
 	createdAt: timestamp("created_at").notNull().defaultNow()
 });
 const todosTags = pgTable("todos_tags", {
@@ -339,7 +341,7 @@ OTPEmail.PreviewProps = {
 //#region src/modules/master-data/otp/service.ts
 const otpStore = /* @__PURE__ */ new Map();
 const resend = new Resend(process.env.RESEND_API_KEY);
-nodemailer.createTransport({
+const transporter = nodemailer.createTransport({
 	service: "gmail",
 	auth: {
 		user: process.env.GMAIL_USER,
@@ -360,10 +362,10 @@ async function sendOTP(to, baseURL) {
 		brandName: "Todo List",
 		expiresInMin: 10
 	}));
-	await resend.emails.send({
-		from: "Todo List <noreply@todo-list.dkaji.my.id>",
+	await transporter.sendMail({
+		from: `Todo List <${process.env.GMAIL_USER}>`,
 		to,
-		subject: "Your OTP Code",
+		subject: "Kode OTP Anda",
 		html
 	});
 	return {
@@ -770,9 +772,15 @@ const otpController = new Elysia({ prefix: "/otp" }).get("/send", async ({ reque
 
 //#endregion
 //#region src/modules/master-data/tags/service.ts
-const listOfTags = async ({ page = 1, limit = 10, search, userId }) => {
+const listOfTags = async ({ page = 1, limit = 10, search, userId, status }) => {
 	const searchQuery = `%${search}%`;
-	const whereCondition = and(eq(tags.userId, String(userId)), or(ilike(tags.name, searchQuery), ilike(tags.color, searchQuery)));
+	const filterUser = eq(tags.userId, String(userId));
+	let statusCondition;
+	if (status !== void 0) {
+		const statusBoolean = typeof status === "string" ? status.toLowerCase() === "true" : status;
+		statusCondition = eq(tags.status, statusBoolean);
+	}
+	const whereCondition = and(filterUser, or(ilike(tags.name, searchQuery), ilike(tags.color, searchQuery)), statusCondition);
 	const payload = await db.query.tags.findMany({
 		with: { todosTags: { with: { todo: { columns: {
 			id: true,
@@ -795,18 +803,20 @@ const listOfTags = async ({ page = 1, limit = 10, search, userId }) => {
 const getTagById = async (id) => {
 	return await db.query.tags.findFirst({ where: eq(tags.id, id) });
 };
-const createTag = async (userId, name, color) => {
+const createTag = async (userId, name, color, tagStatus) => {
 	const [newTag] = await db.insert(tags).values({
 		name,
 		color,
-		userId
+		userId,
+		status: Boolean(tagStatus)
 	}).returning();
 	return newTag;
 };
-const updateTag = async (id, name, color) => {
+const updateTag = async (id, name, color, tagStatus) => {
 	const [updatedTag] = await db.update(tags).set({
 		name,
-		color
+		color,
+		status: Boolean(tagStatus)
 	}).where(eq(tags.id, id)).returning();
 	return updatedTag;
 };
@@ -817,25 +827,29 @@ const QueryTags$1 = t.Object({
 	userId: t.Optional(t.String()),
 	page: t.Optional(t.Numeric({ default: 1 })),
 	limit: t.Optional(t.Numeric({ default: 10 })),
-	search: t.Optional(t.String())
+	search: t.Optional(t.String()),
+	status: t.Optional(t.Union([t.Boolean(), t.String()]))
 });
 const BodyTag = t.Object({
 	name: t.String(),
-	color: t.String()
+	color: t.String(),
+	status: t.Optional(t.Union([t.Boolean(), t.String()], { default: true }))
 });
 const UpdateBodyTag = t.Object({
 	name: t.Optional(t.String()),
-	color: t.Optional(t.String())
+	color: t.Optional(t.String()),
+	status: t.Optional(t.Union([t.Boolean(), t.String()]))
 });
 
 //#endregion
 //#region src/modules/master-data/tags/index.ts
-const tagsController = new Elysia({ prefix: "/tags" }).get("/", async ({ query: { page, limit, search }, status, set }) => {
+const tagsController = new Elysia({ prefix: "/tags" }).get("/", async ({ query: { page, limit, search, status: tagStatus }, status, set }) => {
 	const { total, payload: tags$1 } = await listOfTags({
 		limit,
 		page: (Number(page) - 1) * Number(limit),
 		search: search?.toLowerCase() ?? "",
-		userId: String(set.headers["x-user-id"])
+		userId: String(set.headers["x-user-id"]),
+		status: tagStatus
 	});
 	return status(200), {
 		status: 200,
@@ -855,8 +869,8 @@ const tagsController = new Elysia({ prefix: "/tags" }).get("/", async ({ query: 
 		message: "Tag not found"
 	});
 	return status(200, { data: tag });
-}).post("/", async ({ body: { name, color }, status, set }) => {
-	const newTag = await createTag(String(set.headers["x-user-id"]), name, color);
+}).post("/", async ({ body: { name, color, status: tagStatus }, status, set }) => {
+	const newTag = await createTag(String(set.headers["x-user-id"]), name, color, Boolean(tagStatus));
 	if (!newTag) return status(500, {
 		status: 500,
 		message: "Failed to create tag"
@@ -866,7 +880,7 @@ const tagsController = new Elysia({ prefix: "/tags" }).get("/", async ({ query: 
 		message: "Tag created successfully",
 		data: newTag
 	});
-}, { body: BodyTag }).put("/:id", async ({ params: { id }, body: { name, color }, status }) => {
+}, { body: BodyTag }).put("/:id", async ({ params: { id }, body: { name, color, status: tagStatus }, status }) => {
 	if (!id) return status(400, {
 		status: 400,
 		message: "Tag ID is required"
@@ -875,7 +889,7 @@ const tagsController = new Elysia({ prefix: "/tags" }).get("/", async ({ query: 
 		status: 404,
 		message: "Tag not found"
 	});
-	const updatedTag = await updateTag(id, String(name), String(color));
+	const updatedTag = await updateTag(id, String(name), String(color), Boolean(tagStatus));
 	if (!updatedTag) return status(404, {
 		status: 404,
 		message: "Tag not found"
@@ -894,12 +908,17 @@ const tagsController = new Elysia({ prefix: "/tags" }).get("/", async ({ query: 
 
 //#endregion
 //#region src/modules/master-data/todo-status/service.ts
-const listOfTodoStatus = async ({ page = 1, limit = 10, search, userId }) => {
+const listOfTodoStatus = async ({ page = 1, limit = 10, search, userId, status }) => {
 	const searchQuery = `%${search}%`;
 	let seachCondition;
 	if (search) seachCondition = or(ilike(statuses.name, searchQuery), ilike(statuses.label, searchQuery), ilike(statuses.color, searchQuery));
+	let statusCondition;
+	if (status !== void 0) {
+		const statusBoolean = typeof status === "string" ? status.toLowerCase() === "true" : status;
+		statusCondition = eq(statuses.status, statusBoolean);
+	}
 	const baseCondition = eq(statuses.userId, String(userId));
-	const whereCondition = and(seachCondition, baseCondition);
+	const whereCondition = and(seachCondition, baseCondition, statusCondition);
 	const payload = await db.query.statuses.findMany({
 		with: { todos: {
 			columns: {
@@ -942,22 +961,24 @@ const listOfTodoStatus = async ({ page = 1, limit = 10, search, userId }) => {
 const getTodoStatusById = async (id) => {
 	return await db.query.statuses.findFirst({ where: eq(statuses.id, id) });
 };
-const createTodoStatus = async ({ name, label, color, userId, sortOrder }) => {
+const createTodoStatus = async ({ name, label, color, userId, sortOrder, status }) => {
 	return await db.insert(statuses).values({
 		userId: String(userId),
 		name,
 		label,
 		color,
-		sortOrder
+		sortOrder,
+		status: Boolean(status)
 	}).returning();
 };
-const updateTodoStatus = async (id, { name, label, color, userId, sortOrder }) => {
+const updateTodoStatus = async (id, { name, label, color, userId, sortOrder, status }) => {
 	return await db.update(statuses).set({
 		name,
 		label,
 		color,
 		userId,
-		sortOrder
+		sortOrder,
+		status: Boolean(status)
 	}).where(eq(statuses.id, id)).returning();
 };
 const deleteTodoStatus = async (id) => {
@@ -970,31 +991,35 @@ const QueryTags = t.Object({
 	page: t.Optional(t.Numeric()),
 	limit: t.Optional(t.Numeric()),
 	search: t.Optional(t.String()),
-	userId: t.Optional(t.String())
+	userId: t.Optional(t.String()),
+	status: t.Optional(t.Union([t.Boolean(), t.String()]))
 });
 const createTodoStatusSchema = t.Object({
 	userId: t.Optional(t.String()),
 	name: t.String(),
 	label: t.String(),
 	color: t.String(),
-	sortOrder: t.Numeric()
+	sortOrder: t.Numeric(),
+	status: t.Optional(t.Union([t.Boolean(), t.String()], { default: true }))
 });
 const updateTodoStatusSchema = t.Object({
 	userId: t.Optional(t.String()),
 	name: t.Optional(t.String()),
 	label: t.Optional(t.String()),
 	color: t.Optional(t.String()),
-	sortOrder: t.Optional(t.Numeric())
+	sortOrder: t.Optional(t.Numeric()),
+	status: t.Optional(t.Union([t.Boolean(), t.String()]))
 });
 
 //#endregion
 //#region src/modules/master-data/todo-status/index.ts
-const todoStatusController = new Elysia({ prefix: "/todo-status" }).get("/", async ({ query: { page, limit, search }, status, set }) => {
+const todoStatusController = new Elysia({ prefix: "/todo-status" }).get("/", async ({ query: { page, limit, search, status: todoStatus }, status, set }) => {
 	const { total, payload: tags$1 } = await listOfTodoStatus({
 		limit,
 		page: (Number(page) - 1) * Number(limit),
 		search: search?.toLowerCase() ?? "",
-		userId: String(set.headers["x-user-id"])
+		userId: String(set.headers["x-user-id"]),
+		status: todoStatus
 	});
 	return status(200), {
 		status: 200,
@@ -1013,20 +1038,21 @@ const todoStatusController = new Elysia({ prefix: "/todo-status" }).get("/", asy
 		message: `Get todo status with id ${id}`,
 		data: tag
 	});
-}, { params: z$1.object({ id: z$1.string().uuid() }) }).post("/", async ({ body: { name, label, color, sortOrder }, status, set }) => {
+}, { params: z$1.object({ id: z$1.string().uuid() }) }).post("/", async ({ body: { name, label, color, sortOrder, status: tagStatus }, status, set }) => {
 	const newStatus = await createTodoStatus({
 		userId: String(set.headers["x-user-id"]),
 		name,
 		label,
 		color,
-		sortOrder
+		sortOrder,
+		status: Boolean(tagStatus)
 	});
 	if (!newStatus) return status(400, { message: "Failed to create todo status" });
 	return status(201, {
 		message: "Todo status created",
 		data: newStatus
 	});
-}, { body: createTodoStatusSchema }).put("/:id", async ({ body: { name, label, color, sortOrder }, params: { id }, status, set }) => {
+}, { body: createTodoStatusSchema }).put("/:id", async ({ body: { name, label, color, sortOrder, status: tagStatus }, params: { id }, status, set }) => {
 	if (!await getTodoStatusById(id)) return status(404, {
 		status: 404,
 		message: "Todo status not found"
@@ -1036,7 +1062,8 @@ const todoStatusController = new Elysia({ prefix: "/todo-status" }).get("/", asy
 		label,
 		color,
 		sortOrder,
-		userId: String(set.headers["x-user-id"])
+		userId: String(set.headers["x-user-id"]),
+		status: Boolean(tagStatus)
 	});
 	if (!updatedStatus) return status(400, { message: "Failed to update todo status" });
 	return status(200, {
