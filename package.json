@@ -1,10 +1,9 @@
 {
   "name": "bun-todo-list",
   "version": "1.0.50",
-  "type": "module",
   "scripts": {
-    "test": "bun run api/index.ts",
-    "dev": "bun run --watch src/server.ts",
+    "test": "bun run public/index.ts",
+    "dev": "bun run --watch src/index.ts",
     "build": "tsdown src/index.ts -d api --dts",
     "email": "email dev --dir src/emails",
     "db:generate": "bunx drizzle-kit generate",
@@ -42,6 +41,7 @@
     "react-dom": "^19.2.0",
     "resend": "^6.2.1",
     "server": "react-dom/server",
+    "typescript": "^5.9.3",
     "uuid": "^13.0.0",
     "zod": "^4.1.12"
   },
@@ -52,7 +52,9 @@
     "bun-types": "latest",
     "drizzle-kit": "^0.31.5",
     "react-email": "^4.3.1",
-    "tsdown": "^0.15.9",
+    "tsdown": "^0.15.12",
     "tsx": "^4.20.6"
-  }
+  },
+  "type": "module",
+  "module": "src/index.js"
 }
