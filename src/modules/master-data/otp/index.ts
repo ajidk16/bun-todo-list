@@ -17,15 +17,15 @@ export const otpController = new Elysia({ prefix: "/otp" })
       query: verifyOTP,
     }
   )
-  .get(
+  .post(
     "/verify",
-    async ({ query, set }) => {
-      const to = set.headers["x-user-email"] as string;
-      const { otp: otpInput } = query;
+    async ({ body: { otp, to }, set }) => {
+      // const to = set.headers["x-user-email"] as string;
+      // const { otp: otpInput } = body;
 
-      return await verifyOTPHandler(to, otpInput);
+      return await verifyOTPHandler(to, otp);
     },
     {
-      query: verifyOTP,
+      body: verifyOTP,
     }
   );

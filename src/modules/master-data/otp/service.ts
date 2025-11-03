@@ -33,20 +33,21 @@ export async function sendOTP(to: string, baseURL: string) {
     })
   );
 
-  // const res = await resend.emails.send({
-  //   from: "Todo List <noreply@todo-list.dkaji.my.id>",
-  //   to,
-  //   subject: "Your OTP Code",
-  //   html,
-  // });
-
-
-  const res = await transporter.sendMail({
-    from: `Todo List <${process.env.GMAIL_USER}>`,
+  // for rensend
+  const res = await resend.emails.send({
+    from: "Todo List <noreply@todo-list.dkaji.my.id>",
     to,
-    subject: "Kode OTP Anda",
+    subject: "Your OTP Code",
     html,
   });
+
+  // for nodemailers
+  // const res = await transporter.sendMail({
+  //   from: `Todo List <${process.env.GMAIL_USER}>`,
+  //   to,
+  //   subject: "Kode OTP Anda",
+  //   html,
+  // });
 
   return { status: true, message: "OTP sent", data: to };
 }

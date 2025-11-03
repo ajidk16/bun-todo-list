@@ -54,16 +54,20 @@ export const app = new Elysia()
     app
 
       .use(authController)
-      .get("/me", async ({ jwt, status, bearer, cookie }) => {
+      .get("/me", async ({ jwt, status, bearer }) => {
         const verifyToken = await jwt.verify(bearer);
         if (!verifyToken) return (status(401), { error: "Unauthorized" });
 
-        return { message: "Authenticated", user: verifyToken, cookie };
+        return status(200, {
+          status: 200,
+          message: "Authenticated",
+          data: verifyToken,
+        });
       })
       .onBeforeHandle(async ({ jwt, bearer, set, status, cookie }) => {
         // const isToken = cookie.auth?.value || bearer;
         const isToken = bearer ? bearer : cookie.auth?.value;
-        if (!isToken) return status(401), { error: "Token not found" };
+        if (!isToken) return (status(401), { error: "Token not found" });
 
         const token = await jwt.verify(String(isToken));
         if (!token) return (status(401), { error: "Unauthorized" });
@@ -73,7 +77,6 @@ export const app = new Elysia()
         set.headers["x-user-username"] = String(token.username);
         set.headers["x-user-verifiedEmail"] = String(token.verifiedEmail);
       })
-
       .use(otpController)
       .guard(authGuard)
       .use(todoController)

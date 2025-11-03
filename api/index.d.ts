@@ -172,6 +172,41 @@ declare const app: Elysia<"", {
           };
         };
       };
+    } & {
+      auth: {
+        profile: {
+          get: {
+            body: unknown;
+            params: {};
+            query: unknown;
+            headers: unknown;
+            response: {
+              [x: string]: any;
+              [x: number]: any;
+              [x: symbol]: any;
+            };
+          };
+        };
+      };
+    } & {
+      auth: {
+        "verify-email": {
+          post: {
+            body: {
+              otp?: string | undefined;
+              to?: string | undefined;
+            };
+            params: {};
+            query: unknown;
+            headers: unknown;
+            response: {
+              [x: string]: any;
+              [x: number]: any;
+              [x: symbol]: any;
+            };
+          };
+        };
+      };
     };
   };
 } & {
@@ -202,6 +237,7 @@ declare const app: Elysia<"", {
             params: {};
             query: {
               otp?: string | undefined;
+              to?: string | undefined;
             };
             headers: unknown;
             response: {
@@ -226,12 +262,13 @@ declare const app: Elysia<"", {
     } & {
       otp: {
         verify: {
-          get: {
-            body: unknown;
-            params: {};
-            query: {
+          post: {
+            body: {
               otp?: string | undefined;
+              to?: string | undefined;
             };
+            params: {};
+            query: unknown;
             headers: unknown;
             response: {
               200: {

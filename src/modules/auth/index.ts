@@ -9,6 +9,8 @@ import {
 import bearer from "@elysiajs/bearer";
 import { jwtPlugin } from "../../plugin/jwt";
 import { loginBody, registerBody } from "./model";
+import { verifyOTP } from "../master-data/otp/model";
+import { verifyOTPHandler } from "../master-data/otp/service";
 export const authController = new Elysia({ prefix: "/auth" })
   .use(jwtPlugin)
   .use(bearer())
@@ -183,4 +185,35 @@ export const authController = new Elysia({ prefix: "/auth" })
         token: newAccessToken,
       }
     );
-  });
+  })
+  .get("/profile", async ({ jwt, bearer, status }) => {
+    const verifyToken = await jwt.verify(String(bearer));
+    if (!verifyToken) return (status(401), { error: "Unauthorized" });
+
+    const user = await findUserById(String(verifyToken.id));
+    if (!user) return (status(404), { error: "User not found" });
+
+    return (
+      status(200),
+      {
+        status: 200,
+        message: "User profile fetched successfully",
+        data: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          verified: user.verifiedEmail,
+        },
+      }
+    );
+  })
+  .post(
+    "/verify-email",
+    async ({ body: { otp, to } }) => {
+      // Implement email verification logic here
+      return await verifyOTPHandler(to, otp);
+    },
+    {
+      body: verifyOTP,
+    }
+  );

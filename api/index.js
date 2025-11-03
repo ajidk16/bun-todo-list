@@ -8,15 +8,15 @@ import postgres from "postgres";
 import * as bcrypt from "bcrypt";
 import bearer from "@elysiajs/bearer";
 import jwt from "@elysiajs/jwt";
-import cors from "@elysiajs/cors";
-import dayjs from "dayjs";
-import z$1, { z } from "zod";
 import * as React from "react";
 import nodemailer from "nodemailer";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Resend } from "resend";
 import { Button, Column, Container, Row, Section, Tailwind, Text } from "@react-email/components";
 import { jsx, jsxs } from "react/jsx-runtime";
+import cors from "@elysiajs/cors";
+import dayjs from "dayjs";
+import z$1, { z } from "zod";
 
 //#region rolldown:runtime
 var __defProp = Object.defineProperty;
@@ -199,6 +199,210 @@ const registerBody = t.Object({
 });
 
 //#endregion
+//#region src/modules/master-data/otp/model.ts
+const verifyOTP = t.Object({
+	otp: t.Optional(t.String()),
+	to: t.Optional(t.String())
+});
+
+//#endregion
+//#region src/emails/otp.tsx
+function OTPEmail({ otp, username, verifyUrl, supportEmail, brandName, expiresInMin }) {
+	const digits = [...otp.toString()];
+	return /* @__PURE__ */ jsx(Tailwind, { children: /* @__PURE__ */ jsx(Section, {
+		className: "bg-slate-100 py-8",
+		children: /* @__PURE__ */ jsxs(Container, {
+			className: "mx-auto w-full max-w-[560px] px-4",
+			children: [/* @__PURE__ */ jsxs(Section, {
+				className: "overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200",
+				children: [
+					/* @__PURE__ */ jsx(Section, {
+						className: "bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-5",
+						children: /* @__PURE__ */ jsx(Row, { children: /* @__PURE__ */ jsx(Column, { children: /* @__PURE__ */ jsxs("div", {
+							className: "flex items-center gap-3 text-white",
+							children: [/* @__PURE__ */ jsx("div", {
+								className: "flex h-9 w-9 items-center justify-center rounded-xl bg-white/10",
+								children: /* @__PURE__ */ jsx("svg", {
+									xmlns: "http://www.w3.org/2000/svg",
+									viewBox: "0 0 24 24",
+									fill: "currentColor",
+									className: "h-5 w-5",
+									children: /* @__PURE__ */ jsx("path", { d: "M12 3l8.66 5v8L12 21l-8.66-5V8L12 3zm0 2.309L5.34 9 12 12.691 18.66 9 12 5.309z" })
+								})
+							}), /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx(Text, {
+								className: "m-0 text-[11px] uppercase tracking-wider text-white/70",
+								children: "Keamanan Akun"
+							}), /* @__PURE__ */ jsx(Text, {
+								className: "m-0 text-base font-semibold text-white",
+								children: "Verifikasi Kode OTP"
+							})] })]
+						}) }) })
+					}),
+					/* @__PURE__ */ jsxs(Section, {
+						className: "px-6 py-6",
+						children: [
+							/* @__PURE__ */ jsxs(Text, {
+								className: "m-0 text-slate-700",
+								children: ["Halo, ", username]
+							}),
+							/* @__PURE__ */ jsx(Text, {
+								className: "mt-3 text-slate-700",
+								children: "Kami menerima permintaan untuk memverifikasi akun Anda. Masukkan kode OTP berikut pada aplikasi atau situs kami:"
+							}),
+							/* @__PURE__ */ jsx("div", {
+								className: "mt-5 flex justify-center gap-2",
+								children: digits.map((d, i) => /* @__PURE__ */ jsx("span", {
+									className: "flex h-12 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-xl font-semibold tracking-widest text-slate-800",
+									children: d
+								}, `${d}-${i}`))
+							}),
+							/* @__PURE__ */ jsxs(Text, {
+								className: "mt-4 text-sm text-slate-600",
+								children: [
+									"Kode berlaku selama",
+									" ",
+									/* @__PURE__ */ jsxs("span", {
+										className: "font-semibold text-slate-800",
+										children: [expiresInMin, " menit"]
+									}),
+									". Jangan bagikan OTP kepada siapa pun."
+								]
+							}),
+							/* @__PURE__ */ jsx("div", {
+								className: "mt-6 text-center",
+								children: /* @__PURE__ */ jsx(Button, {
+									href: verifyUrl,
+									className: "inline-block rounded-xl bg-indigo-600 px-5 py-3 text-center text-sm font-semibold text-white no-underline shadow",
+									children: "Verifikasi Sekarang"
+								})
+							}),
+							/* @__PURE__ */ jsx("div", {
+								className: "mt-6 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200",
+								children: /* @__PURE__ */ jsxs(Text, {
+									className: "m-0 text-sm text-slate-700",
+									children: [
+										"Tidak meminta verifikasi? Abaikan email ini. Jika Anda punya pertanyaan, hubungi",
+										" ",
+										/* @__PURE__ */ jsx("a", {
+											href: `mailto:${supportEmail}`,
+											className: "text-indigo-600 underline",
+											children: supportEmail
+										}),
+										"."
+									]
+								})
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "mt-6",
+								children: [/* @__PURE__ */ jsx(Text, {
+									className: "m-0 text-[12px] text-slate-500",
+									children: "Jika tombol tidak berfungsi, salin dan tempel kode ini:"
+								}), /* @__PURE__ */ jsx("code", {
+									className: "mt-1 inline-block rounded-lg bg-slate-100 px-2 py-1 text-sm font-semibold text-slate-800",
+									children: otp
+								})]
+							})
+						]
+					}),
+					/* @__PURE__ */ jsxs(Section, {
+						className: "border-t border-slate-200 bg-white px-6 py-5",
+						children: [/* @__PURE__ */ jsx(Text, {
+							className: "m-0 text-[12px] text-slate-500",
+							children: "Anda menerima email ini karena ada aktivitas masuk atau pendaftaran pada akun Anda."
+						}), /* @__PURE__ */ jsxs(Text, {
+							className: "m-0 mt-1 text-[12px] text-slate-500",
+							children: [
+								"© 2025 ",
+								brandName,
+								", All rights reserved."
+							]
+						})]
+					})
+				]
+			}), /* @__PURE__ */ jsx(Text, {
+				className: "mt-4 text-center text-[11px] leading-5 text-slate-500",
+				children: "Harap jangan membalas email ini. Kotak masuk ini tidak dipantau."
+			})]
+		})
+	}) });
+}
+OTPEmail.PreviewProps = {
+	otp: "832374",
+	username: "Budi",
+	verifyUrl: "https://example.com/verify",
+	supportEmail: "support@example.com",
+	brandName: "Desa Harmoni",
+	expiresInMin: 10
+};
+
+//#endregion
+//#region src/modules/master-data/otp/service.ts
+const otpStore = /* @__PURE__ */ new Map();
+const resend = new Resend(process.env.RESEND_API_KEY);
+nodemailer.createTransport({
+	service: "gmail",
+	auth: {
+		user: process.env.GMAIL_USER,
+		pass: process.env.GMAIL_PASS
+	}
+});
+async function sendOTP(to, baseURL) {
+	const otp = (Math.floor(Math.random() * 9e5) + 1e5).toString();
+	const expiresAt = Date.now() + 600 * 1e3;
+	otpStore.set(to, {
+		otp,
+		expiresAt
+	});
+	const html = renderToStaticMarkup(React.createElement(OTPEmail, {
+		otp,
+		verifyUrl: `${process.env.FRONTEND_URL}/dashboard?to=${to}&otp=${otp}`,
+		supportEmail: "todo@todo-list.dkaji.my.id",
+		brandName: "Todo List",
+		expiresInMin: 10
+	}));
+	await resend.emails.send({
+		from: "Todo List <noreply@todo-list.dkaji.my.id>",
+		to,
+		subject: "Your OTP Code",
+		html
+	});
+	return {
+		status: true,
+		message: "OTP sent",
+		data: to
+	};
+}
+async function verifyOTPHandler(to, otpInput) {
+	const record = otpStore.get(to ?? "");
+	if (!record) return {
+		status: false,
+		error: "OTP not found or expired"
+	};
+	if (Date.now() > record.expiresAt) {
+		otpStore.delete(to ?? "");
+		return {
+			status: false,
+			error: "OTP expired"
+		};
+	}
+	if (record.otp !== otpInput) return {
+		status: false,
+		error: "Invalid OTP"
+	};
+	const user = await verifyEmail(to ?? "");
+	if (!user) return {
+		status: false,
+		error: "Email not registered"
+	};
+	otpStore.delete(to ?? "");
+	return {
+		status: 200,
+		message: "OTP verified",
+		data: user
+	};
+}
+
+//#endregion
 //#region src/modules/auth/index.ts
 const authController = new Elysia({ prefix: "/auth" }).use(jwtPlugin).use(bearer()).post("/login", async ({ body: { username, password }, jwt: jwt$1, status }) => {
 	const user = await findUserByUsername(username);
@@ -284,7 +488,24 @@ const authController = new Elysia({ prefix: "/auth" }).use(jwtPlugin).use(bearer
 		message: "Token refreshed",
 		token: newAccessToken
 	};
-});
+}).get("/profile", async ({ jwt: jwt$1, bearer: bearer$1, status }) => {
+	const verifyToken = await jwt$1.verify(String(bearer$1));
+	if (!verifyToken) return status(401), { error: "Unauthorized" };
+	const user = await findUserById(String(verifyToken.id));
+	if (!user) return status(404), { error: "User not found" };
+	return status(200), {
+		status: 200,
+		message: "User profile fetched successfully",
+		data: {
+			id: user.id,
+			username: user.username,
+			email: user.email,
+			verified: user.verifiedEmail
+		}
+	};
+}).post("/verify-email", async ({ body: { otp, to } }) => {
+	return await verifyOTPHandler(to, otp);
+}, { body: verifyOTP });
 
 //#endregion
 //#region src/plugin/auth-guard.ts
@@ -538,217 +759,14 @@ const todoController = new Elysia({ prefix: "/todos" }).use(jwtPlugin).use(beare
 });
 
 //#endregion
-//#region src/modules/master-data/otp/model.ts
-const verifyOTP = t.Object({ otp: t.Optional(t.String()) });
-
-//#endregion
-//#region src/emails/otp.tsx
-function OTPEmail({ otp, username, verifyUrl, supportEmail, brandName, expiresInMin }) {
-	const digits = [...otp.toString()];
-	return /* @__PURE__ */ jsx(Tailwind, { children: /* @__PURE__ */ jsx(Section, {
-		className: "bg-slate-100 py-8",
-		children: /* @__PURE__ */ jsxs(Container, {
-			className: "mx-auto w-full max-w-[560px] px-4",
-			children: [/* @__PURE__ */ jsxs(Section, {
-				className: "overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200",
-				children: [
-					/* @__PURE__ */ jsx(Section, {
-						className: "bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-5",
-						children: /* @__PURE__ */ jsx(Row, { children: /* @__PURE__ */ jsx(Column, { children: /* @__PURE__ */ jsxs("div", {
-							className: "flex items-center gap-3 text-white",
-							children: [/* @__PURE__ */ jsx("div", {
-								className: "flex h-9 w-9 items-center justify-center rounded-xl bg-white/10",
-								children: /* @__PURE__ */ jsx("svg", {
-									xmlns: "http://www.w3.org/2000/svg",
-									viewBox: "0 0 24 24",
-									fill: "currentColor",
-									className: "h-5 w-5",
-									children: /* @__PURE__ */ jsx("path", { d: "M12 3l8.66 5v8L12 21l-8.66-5V8L12 3zm0 2.309L5.34 9 12 12.691 18.66 9 12 5.309z" })
-								})
-							}), /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx(Text, {
-								className: "m-0 text-[11px] uppercase tracking-wider text-white/70",
-								children: "Keamanan Akun"
-							}), /* @__PURE__ */ jsx(Text, {
-								className: "m-0 text-base font-semibold text-white",
-								children: "Verifikasi Kode OTP"
-							})] })]
-						}) }) })
-					}),
-					/* @__PURE__ */ jsxs(Section, {
-						className: "px-6 py-6",
-						children: [
-							/* @__PURE__ */ jsxs(Text, {
-								className: "m-0 text-slate-700",
-								children: ["Halo, ", username]
-							}),
-							/* @__PURE__ */ jsx(Text, {
-								className: "mt-3 text-slate-700",
-								children: "Kami menerima permintaan untuk memverifikasi akun Anda. Masukkan kode OTP berikut pada aplikasi atau situs kami:"
-							}),
-							/* @__PURE__ */ jsx("div", {
-								className: "mt-5 flex justify-center gap-2",
-								children: digits.map((d, i) => /* @__PURE__ */ jsx("span", {
-									className: "flex h-12 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-xl font-semibold tracking-widest text-slate-800",
-									children: d
-								}, `${d}-${i}`))
-							}),
-							/* @__PURE__ */ jsxs(Text, {
-								className: "mt-4 text-sm text-slate-600",
-								children: [
-									"Kode berlaku selama",
-									" ",
-									/* @__PURE__ */ jsxs("span", {
-										className: "font-semibold text-slate-800",
-										children: [expiresInMin, " menit"]
-									}),
-									". Jangan bagikan OTP kepada siapa pun."
-								]
-							}),
-							/* @__PURE__ */ jsx("div", {
-								className: "mt-6 text-center",
-								children: /* @__PURE__ */ jsx(Button, {
-									href: verifyUrl,
-									className: "inline-block rounded-xl bg-indigo-600 px-5 py-3 text-center text-sm font-semibold text-white no-underline shadow",
-									children: "Verifikasi Sekarang"
-								})
-							}),
-							/* @__PURE__ */ jsx("div", {
-								className: "mt-6 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200",
-								children: /* @__PURE__ */ jsxs(Text, {
-									className: "m-0 text-sm text-slate-700",
-									children: [
-										"Tidak meminta verifikasi? Abaikan email ini. Jika Anda punya pertanyaan, hubungi",
-										" ",
-										/* @__PURE__ */ jsx("a", {
-											href: `mailto:${supportEmail}`,
-											className: "text-indigo-600 underline",
-											children: supportEmail
-										}),
-										"."
-									]
-								})
-							}),
-							/* @__PURE__ */ jsxs("div", {
-								className: "mt-6",
-								children: [/* @__PURE__ */ jsx(Text, {
-									className: "m-0 text-[12px] text-slate-500",
-									children: "Jika tombol tidak berfungsi, salin dan tempel kode ini:"
-								}), /* @__PURE__ */ jsx("code", {
-									className: "mt-1 inline-block rounded-lg bg-slate-100 px-2 py-1 text-sm font-semibold text-slate-800",
-									children: otp
-								})]
-							})
-						]
-					}),
-					/* @__PURE__ */ jsxs(Section, {
-						className: "border-t border-slate-200 bg-white px-6 py-5",
-						children: [/* @__PURE__ */ jsx(Text, {
-							className: "m-0 text-[12px] text-slate-500",
-							children: "Anda menerima email ini karena ada aktivitas masuk atau pendaftaran pada akun Anda."
-						}), /* @__PURE__ */ jsxs(Text, {
-							className: "m-0 mt-1 text-[12px] text-slate-500",
-							children: [
-								"© 2025 ",
-								brandName,
-								", All rights reserved."
-							]
-						})]
-					})
-				]
-			}), /* @__PURE__ */ jsx(Text, {
-				className: "mt-4 text-center text-[11px] leading-5 text-slate-500",
-				children: "Harap jangan membalas email ini. Kotak masuk ini tidak dipantau."
-			})]
-		})
-	}) });
-}
-OTPEmail.PreviewProps = {
-	otp: "832374",
-	username: "Budi",
-	verifyUrl: "https://example.com/verify",
-	supportEmail: "support@example.com",
-	brandName: "Desa Harmoni",
-	expiresInMin: 10
-};
-
-//#endregion
-//#region src/modules/master-data/otp/service.ts
-const otpStore = /* @__PURE__ */ new Map();
-const resend = new Resend(process.env.RESEND_API_KEY);
-const transporter = nodemailer.createTransport({
-	service: "gmail",
-	auth: {
-		user: process.env.GMAIL_USER,
-		pass: process.env.GMAIL_PASS
-	}
-});
-async function sendOTP(to, baseURL) {
-	const otp = (Math.floor(Math.random() * 9e5) + 1e5).toString();
-	const expiresAt = Date.now() + 600 * 1e3;
-	otpStore.set(to, {
-		otp,
-		expiresAt
-	});
-	const html = renderToStaticMarkup(React.createElement(OTPEmail, {
-		otp,
-		verifyUrl: `${process.env.FRONTEND_URL}/dashboard?to=${to}&otp=${otp}`,
-		supportEmail: "todo@todo-list.dkaji.my.id",
-		brandName: "Todo List",
-		expiresInMin: 10
-	}));
-	await transporter.sendMail({
-		from: `Todo List <${process.env.GMAIL_USER}>`,
-		to,
-		subject: "Kode OTP Anda",
-		html
-	});
-	return {
-		status: true,
-		message: "OTP sent",
-		data: to
-	};
-}
-async function verifyOTPHandler(to, otpInput) {
-	const record = otpStore.get(to ?? "");
-	if (!record) return {
-		status: false,
-		error: "OTP not found or expired"
-	};
-	if (Date.now() > record.expiresAt) {
-		otpStore.delete(to ?? "");
-		return {
-			status: false,
-			error: "OTP expired"
-		};
-	}
-	if (record.otp !== otpInput) return {
-		status: false,
-		error: "Invalid OTP"
-	};
-	const user = await verifyEmail(to ?? "");
-	if (!user) return {
-		status: false,
-		error: "Email not registered"
-	};
-	otpStore.delete(to ?? "");
-	return {
-		status: 200,
-		message: "OTP verified",
-		data: user
-	};
-}
-
-//#endregion
 //#region src/modules/master-data/otp/index.ts
 const otpController = new Elysia({ prefix: "/otp" }).get("/send", async ({ request, set }) => {
 	const to = set.headers["x-user-email"];
 	const baseURL = new URL(request.url).origin;
 	return await sendOTP(to, baseURL);
-}, { query: verifyOTP }).get("/verify", async ({ query, set }) => {
-	const to = set.headers["x-user-email"];
-	const { otp: otpInput } = query;
-	return await verifyOTPHandler(to, otpInput);
-}, { query: verifyOTP });
+}, { query: verifyOTP }).post("/verify", async ({ body: { otp, to }, set }) => {
+	return await verifyOTPHandler(to, otp);
+}, { body: verifyOTP });
 
 //#endregion
 //#region src/modules/master-data/tags/service.ts
@@ -1076,14 +1094,14 @@ const app = new Elysia().use(cors({
 	}
 }).get("/", () => {
 	return { message: "selamat datang suraji" };
-}).get("/suraji", () => ({ message: "halo suraji!" })).group("/api/v1", (app$1) => app$1.use(authController).get("/me", async ({ jwt: jwt$1, status, bearer: bearer$1, cookie }) => {
+}).get("/suraji", () => ({ message: "halo suraji!" })).group("/api/v1", (app$1) => app$1.use(authController).get("/me", async ({ jwt: jwt$1, status, bearer: bearer$1 }) => {
 	const verifyToken = await jwt$1.verify(bearer$1);
 	if (!verifyToken) return status(401), { error: "Unauthorized" };
-	return {
+	return status(200, {
+		status: 200,
 		message: "Authenticated",
-		user: verifyToken,
-		cookie
-	};
+		data: verifyToken
+	});
 }).onBeforeHandle(async ({ jwt: jwt$1, bearer: bearer$1, set, status, cookie }) => {
 	const isToken = bearer$1 ? bearer$1 : cookie.auth?.value;
 	if (!isToken) return status(401), { error: "Token not found" };
