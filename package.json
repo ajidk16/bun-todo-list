@@ -7,9 +7,9 @@
     "dev": "bun run --watch src/server.ts",
     "build": "tsdown src/index.ts -d api --dts",
     "email": "email dev --dir src/emails",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
+    "db:generate": "bunx drizzle-kit generate",
+    "db:migrate": "bunx drizzle-kit migrate",
+    "db:push": "bunx drizzle-kit push",
     "db:studio": "drizzle-kit studio --port 5555",
     "db:seed": "bun run src/db/seed/index.ts"
   },
