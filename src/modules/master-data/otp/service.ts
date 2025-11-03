@@ -2,6 +2,7 @@ import * as React from "react";
 import nodemailer from "nodemailer";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Resend } from "resend";
+import { kv } from "@vercel/kv";
 import OTPEmail from "../../../emails/otp";
 import { verifyEmail } from "../../auth/service";
 
@@ -52,15 +53,44 @@ export async function sendOTP(to: string, baseURL: string) {
   return { status: true, message: "OTP sent", data: to };
 }
 
+// export async function verifyOTPHandler(to?: string, otpInput?: string) {
+//   const record = otpStore.get(to ?? "");
+//   if (!record) {
+//     return { status: false, error: "OTP not found or expired" };
+//   }
+
+//   const isExpired = Date.now() > record.expiresAt;
+//   if (isExpired) {
+//     otpStore.delete(to ?? "");
+//     return { status: false, error: "OTP expired" };
+//   }
+
+//   if (record.otp !== otpInput) {
+//     return { status: false, error: "Invalid OTP" };
+//   }
+
+//   const user = await verifyEmail(to ?? "");
+//   if (!user) {
+//     return { status: false, error: "Email not registered" };
+//   }
+
+//   otpStore.delete(to ?? "");
+//   return { status: 200, message: "OTP verified", data: user };
+// }
+
 export async function verifyOTPHandler(to?: string, otpInput?: string) {
-  const record = otpStore.get(to ?? "");
+  if (!to) {
+    return { status: false, error: "No email provided" };
+  }
+
+  const record = await kv.get<{ otp: string; expiresAt: number }>(to);
   if (!record) {
     return { status: false, error: "OTP not found or expired" };
   }
 
   const isExpired = Date.now() > record.expiresAt;
   if (isExpired) {
-    otpStore.delete(to ?? "");
+    await kv.del(to);
     return { status: false, error: "OTP expired" };
   }
 
@@ -68,11 +98,12 @@ export async function verifyOTPHandler(to?: string, otpInput?: string) {
     return { status: false, error: "Invalid OTP" };
   }
 
-  const user = await verifyEmail(to ?? "");
+  const user = await verifyEmail(to);
   if (!user) {
     return { status: false, error: "Email not registered" };
   }
 
-  otpStore.delete(to ?? "");
+  await kv.del(to);
+
   return { status: 200, message: "OTP verified", data: user };
 }
