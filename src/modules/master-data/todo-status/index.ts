@@ -16,7 +16,11 @@ import z from "zod";
 export const todoStatusController = new Elysia({ prefix: "/todo-status" })
   .get(
     "/",
-    async ({ query: { page, limit, search }, status, set }) => {
+    async ({
+      query: { page, limit, search, status: todoStatus },
+      status,
+      set,
+    }) => {
       const offset = (Number(page) - 1) * Number(limit);
       const searchTerm = search?.toLowerCase() ?? "";
 
@@ -25,6 +29,7 @@ export const todoStatusController = new Elysia({ prefix: "/todo-status" })
         page: offset,
         search: searchTerm,
         userId: String(set.headers["x-user-id"]),
+        status: todoStatus,
       });
 
       return (
@@ -67,13 +72,18 @@ export const todoStatusController = new Elysia({ prefix: "/todo-status" })
   )
   .post(
     "/",
-    async ({ body: { name, label, color, sortOrder }, status, set }) => {
+    async ({
+      body: { name, label, color, sortOrder, status: tagStatus },
+      status,
+      set,
+    }) => {
       const newStatus = await createTodoStatus({
         userId: String(set.headers["x-user-id"]),
         name,
         label,
         color,
         sortOrder,
+        status: Boolean(tagStatus),
       });
 
       if (!newStatus) {
@@ -92,7 +102,7 @@ export const todoStatusController = new Elysia({ prefix: "/todo-status" })
   .put(
     "/:id",
     async ({
-      body: { name, label, color, sortOrder },
+      body: { name, label, color, sortOrder, status: tagStatus },
       params: { id },
       status,
       set,
@@ -109,6 +119,7 @@ export const todoStatusController = new Elysia({ prefix: "/todo-status" })
         color,
         sortOrder,
         userId: String(set.headers["x-user-id"]),
+        status: Boolean(tagStatus),
       });
 
       if (!updatedStatus) {

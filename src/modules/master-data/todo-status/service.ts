@@ -12,6 +12,7 @@ export const listOfTodoStatus = async ({
   limit = 10,
   search,
   userId,
+  status,
 }: QueryTags) => {
   const searchQuery = `%${search}%`;
 
@@ -24,9 +25,16 @@ export const listOfTodoStatus = async ({
     );
   }
 
+  let statusCondition;
+  if (status !== undefined) {
+    const statusBoolean =
+      typeof status === "string" ? status.toLowerCase() === "true" : status;
+    statusCondition = eq(statuses.status, statusBoolean);
+  }
+
   const baseCondition = eq(statuses.userId, String(userId));
 
-  const whereCondition = and(seachCondition, baseCondition);
+  const whereCondition = and(seachCondition, baseCondition, statusCondition);
 
   const payload = await db.query.statuses.findMany({
     with: {
@@ -92,6 +100,7 @@ export const createTodoStatus = async ({
   color,
   userId,
   sortOrder,
+  status,
 }: CreateTodoStatusSchema) => {
   const newTodoStatus = await db
     .insert(statuses)
@@ -101,6 +110,7 @@ export const createTodoStatus = async ({
       label,
       color,
       sortOrder,
+      status: Boolean(status),
     })
     .returning();
 
@@ -109,7 +119,7 @@ export const createTodoStatus = async ({
 
 export const updateTodoStatus = async (
   id: string,
-  { name, label, color, userId, sortOrder }: UpdateTodoStatusSchema
+  { name, label, color, userId, sortOrder, status }: UpdateTodoStatusSchema
 ) => {
   const updatedTodoStatus = await db
     .update(statuses)
@@ -119,6 +129,7 @@ export const updateTodoStatus = async (
       color,
       userId,
       sortOrder,
+      status: Boolean(status),
     })
     .where(eq(statuses.id, id))
     .returning();

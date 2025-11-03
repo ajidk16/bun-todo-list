@@ -8,14 +8,24 @@ export const listOfTags = async ({
   limit = 10,
   search,
   userId,
+  status,
 }: QueryTags) => {
   const searchQuery = `%${search}%`;
 
   const filterUser = eq(tags.userId, String(userId));
 
+  let statusCondition;
+
+  if (status !== undefined) {
+    const statusBoolean =
+      typeof status === "string" ? status.toLowerCase() === "true" : status;
+    statusCondition = eq(tags.status, statusBoolean);
+  }
+
   const whereCondition = and(
     filterUser,
-    or(ilike(tags.name, searchQuery), ilike(tags.color, searchQuery))
+    or(ilike(tags.name, searchQuery), ilike(tags.color, searchQuery)),
+    statusCondition
   );
 
   const payload = await db.query.tags.findMany({
@@ -59,20 +69,26 @@ export const getTagById = async (id: string) => {
 export const createTag = async (
   userId: string,
   name: string,
-  color: string
+  color: string,
+  tagStatus: boolean
 ) => {
   const [newTag] = await db
     .insert(tags)
-    .values({ name, color, userId })
+    .values({ name, color, userId, status: Boolean(tagStatus) })
     .returning();
 
   return newTag;
 };
 
-export const updateTag = async (id: string, name: string, color: string) => {
+export const updateTag = async (
+  id: string,
+  name: string,
+  color: string,
+  tagStatus: boolean
+) => {
   const [updatedTag] = await db
     .update(tags)
-    .set({ name, color })
+    .set({ name, color, status: Boolean(tagStatus) })
     .where(eq(tags.id, id))
     .returning();
 

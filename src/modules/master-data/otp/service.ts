@@ -22,8 +22,6 @@ export async function sendOTP(to: string, baseURL: string) {
   const expiresAt = Date.now() + 10 * 60 * 1000; // 10 menit
   otpStore.set(to, { otp, expiresAt });
 
-  // console.log(`OTP for ${to}: ${otp} (expires at ${new Date(expiresAt).toISOString()})`);
-
   const html = renderToStaticMarkup(
     React.createElement(OTPEmail, {
       otp,
@@ -35,20 +33,20 @@ export async function sendOTP(to: string, baseURL: string) {
   );
 
   // for rensend
-  const res = await resend.emails.send({
-    from: "Todo List <noreply@todo-list.dkaji.my.id>",
-    to,
-    subject: "Your OTP Code",
-    html,
-  });
-
-  // for nodemailers
-  // const res = await transporter.sendMail({
-  //   from: `Todo List <${process.env.GMAIL_USER}>`,
+  // const res = await resend.emails.send({
+  //   from: "Todo List <noreply@todo-list.dkaji.my.id>",
   //   to,
-  //   subject: "Kode OTP Anda",
+  //   subject: "Your OTP Code",
   //   html,
   // });
+
+  // for nodemailers
+  const res = await transporter.sendMail({
+    from: `Todo List <${process.env.GMAIL_USER}>`,
+    to,
+    subject: "Kode OTP Anda",
+    html,
+  });
 
   return { status: true, message: "OTP sent", data: to };
 }
@@ -77,33 +75,3 @@ export async function verifyOTPHandler(to?: string, otpInput?: string) {
   otpStore.delete(to ?? "");
   return { status: 200, message: "OTP verified", data: user };
 }
-
-// export async function verifyOTPHandler(to?: string, otpInput?: string) {
-//   if (!to) {
-//     return { status: false, error: "No email provided" };
-//   }
-
-//   const record = await kv.get<{ otp: string; expiresAt: number }>(to);
-//   if (!record) {
-//     return { status: false, error: "OTP not found or expired" };
-//   }
-
-//   const isExpired = Date.now() > record.expiresAt;
-//   if (isExpired) {
-//     await kv.del(to);
-//     return { status: false, error: "OTP expired" };
-//   }
-
-//   if (record.otp !== otpInput) {
-//     return { status: false, error: "Invalid OTP" };
-//   }
-
-//   const user = await verifyEmail(to);
-//   if (!user) {
-//     return { status: false, error: "Email not registered" };
-//   }
-
-//   await kv.del(to);
-
-//   return { status: 200, message: "OTP verified", data: user };
-// }

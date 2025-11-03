@@ -5,7 +5,11 @@ import { BodyTag, QueryTags, UpdateBodyTag } from "./model";
 export const tagsController = new Elysia({ prefix: "/tags" })
   .get(
     "/",
-    async ({ query: { page, limit, search }, status, set }) => {
+    async ({
+      query: { page, limit, search, status: tagStatus },
+      status,
+      set,
+    }) => {
       const offset = (Number(page) - 1) * Number(limit);
       const searchTerm = search?.toLowerCase() ?? "";
 
@@ -14,6 +18,7 @@ export const tagsController = new Elysia({ prefix: "/tags" })
         page: offset,
         search: searchTerm,
         userId: String(set.headers["x-user-id"]),
+        status: tagStatus,
       });
 
       return (
@@ -45,11 +50,12 @@ export const tagsController = new Elysia({ prefix: "/tags" })
   })
   .post(
     "/",
-    async ({ body: { name, color }, status, set }) => {
+    async ({ body: { name, color, status: tagStatus }, status, set }) => {
       const newTag = await createTag(
         String(set.headers["x-user-id"]),
         name,
-        color
+        color,
+        Boolean(tagStatus)
       );
 
       if (!newTag) {
@@ -71,7 +77,11 @@ export const tagsController = new Elysia({ prefix: "/tags" })
   )
   .put(
     "/:id",
-    async ({ params: { id }, body: { name, color }, status }) => {
+    async ({
+      params: { id },
+      body: { name, color, status: tagStatus },
+      status,
+    }) => {
       if (!id) {
         return status(400, {
           status: 400,
@@ -87,7 +97,12 @@ export const tagsController = new Elysia({ prefix: "/tags" })
         });
       }
 
-      const updatedTag = await updateTag(id, String(name), String(color));
+      const updatedTag = await updateTag(
+        id,
+        String(name),
+        String(color),
+        Boolean(tagStatus)
+      );
 
       if (!updatedTag) {
         return status(404, {

@@ -56,6 +56,7 @@ export const statuses = pgTable("statuses", {
   name: varchar("name", { length: 50 }).notNull().unique(),
   label: varchar("label", { length: 100 }).notNull(),
   color: varchar("color", { length: 7 }).default("#3b82f6"),
+  status: boolean("status").notNull().default(true),
   sortOrder: integer("sort_order").default(0),
 });
 
@@ -66,7 +67,8 @@ export const tags = pgTable("tags", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 50 }).notNull(),
-  color: varchar("color", { length: 7 }).default("#3b82f6"), // hex color
+  color: varchar("color", { length: 7 }).default("#3b82f6"),
+  status: boolean("status").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

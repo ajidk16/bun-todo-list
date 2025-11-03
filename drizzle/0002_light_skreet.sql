@@ -1,0 +1,1 @@
+ALTER TABLE "tags" ADD COLUMN "status" boolean DEFAULT true NOT NULL;

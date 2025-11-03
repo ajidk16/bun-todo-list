@@ -15,6 +15,13 @@
       "when": 1761829294532,
       "tag": "0001_wakeful_maestro",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1762161954552,
+      "tag": "0002_light_skreet",
+      "breakpoints": true
     }
   ]
 }

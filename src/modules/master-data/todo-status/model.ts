@@ -6,6 +6,7 @@ export const QueryTags = t.Object({
   limit: t.Optional(t.Numeric()),
   search: t.Optional(t.String()),
   userId: t.Optional(t.String()),
+  status: t.Optional(t.Union([t.Boolean(), t.String()])),
 });
 
 export type QueryTags = typeof QueryTags.static;
@@ -16,6 +17,7 @@ export const createTodoStatusSchema = t.Object({
   label: t.String(),
   color: t.String(),
   sortOrder: t.Numeric(),
+  status: t.Optional(t.Union([t.Boolean(), t.String()], { default: true })),
 });
 export type CreateTodoStatusSchema = typeof createTodoStatusSchema.static;
 
@@ -25,6 +27,7 @@ export const updateTodoStatusSchema = t.Object({
   label: t.Optional(t.String()),
   color: t.Optional(t.String()),
   sortOrder: t.Optional(t.Numeric()),
+  status: t.Optional(t.Union([t.Boolean(), t.String()])),
 });
 
 export type UpdateTodoStatusSchema = typeof updateTodoStatusSchema.static;
